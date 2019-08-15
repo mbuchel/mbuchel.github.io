@@ -1,0 +1,35 @@
+<!doctype html><html><head><title>Sensors &middot; Michael Buchel</title><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1,maximum-scale=1"><script src=https://code.jquery.com/jquery-3.1.1.min.js integrity="sha256-hVVnYaiADRTO2PzUGmuLJr8BLUSjGIZsDYGmIJLv2b8=" crossorigin=anonymous></script><link rel=stylesheet href=https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css integrity=sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u crossorigin=anonymous><script src=https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js integrity=sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa crossorigin=anonymous></script><link rel=stylesheet href=https://use.fontawesome.com/releases/v5.7.2/css/all.css integrity=sha384-fnmOCqbTlWIlj8LyTjo7mOUStjsKC4pOpQbqyi7RrhN7udi9RwhKkMHpvLbHG9Sr crossorigin=anonymous><link rel=stylesheet href=https://mbuchel.github.io/css/nix.css><link rel="shortcut icon" href=/favicon.ico><link href="https://fonts.googleapis.com/css?family=Inconsolata%7COpen+Sans%7CConcert+One" rel=stylesheet><link rel=stylesheet href=https://cdn.jsdelivr.net/npm/katex@0.10.2/dist/katex.min.css integrity=sha384-yFRtMMDnQtDRO8rLpMIKrtPCD5jdktao2TV19YiZYWMDkUR5GQZR/NOVTdquEx1j crossorigin=anonymous><script defer src=https://cdn.jsdelivr.net/npm/katex@0.10.2/dist/katex.min.js integrity=sha384-9Nhn55MVVN0/4OFx7EE5kpFBPsEMZxKTCnA+4fqDmg12eCTqGi6+BB2LjY8brQxJ crossorigin=anonymous></script><script defer src=https://cdn.jsdelivr.net/npm/katex@0.10.2/dist/contrib/auto-render.min.js integrity=sha384-kWPLUVMOks5AQFrykwIup5lo0m3iMkkHrD0uJ4H5cjeGihAutqP0yW0J6dpFiVkI crossorigin=anonymous onload=renderMathInElement(document.body);></script></head><body><header><nav class="navbar navbar-default navbar-fixed-top navbar-inverse font-header"><div class=container-fluid><div class=navbar-header><button type=button class="navbar-toggle collapsed" data-toggle=collapse data-target=#navbar-collapse-1 aria-expanded=false>
+<span class=sr-only>Toggle navigation</span>
+<span class=icon-bar></span><span class=icon-bar></span><span class=icon-bar></span></button>
+<a class=navbar-brand id=green-terminal href=https://mbuchel.github.io/>mbuchel@mim-tech ~ $</a></div><div class="collapse navbar-collapse" id=navbar-collapse-1><ul class="nav navbar-nav navbar-right"><li><a href=https://mbuchel.github.io/>/home/mbuchel</a><li class=dropdown><a href=/mim>~/mim-tech</a><li class=dropdown><a href=/work>~/work</a><li class=dropdown><a href=/knowledge>~/knowledge</a></ul></div></div></nav></header><div class="container wrapper"><h1><a href=https://mbuchel.github.io/knowledge/sensors/>Sensors</a></h1><span class=post-date>Aug 10, 2019</span><div class=post-content><p><img src=/eeg.jpg alt="Sensors Image"><h1 id=background-knowledge>Background Knowledge:</h1><p>Most of my work in sensors, has been in designing biofeedback
+wearable devices, such as WearME Brace. While I also have experience
+in other sensor systems, such as cameras and hall effect sensors,
+this post will be a quick rundown of all the specifics needed in
+order to make a reliable sensor system.<h1 id=quick-run>Quick Run:</h1><p>The first thing to know for sensor design is: what are you trying
+to achieve? From here we can determine what kind of system we are
+trying to design. An example is say I just want a raw value that
+comes in GPS is a perfect example here. A GPS value is just a string
+that comes from a satellite, in this case the system is pretty clear
+cut and simple to implement. Now we just take these values and calculate
+the distance to the satellites, thereby getting the location. Now
+thankfully most GPS modules do this for you so you do not have to
+worry about synchronization issues, and detecting the distance.
+As most sane people use modules and do not make them from scratch.<p>Now not all modules are as simple to use as GPS where all you need
+to do is just simple text parsing. In quite a few cases it is required
+to have protection, or signal processing before the signal gets into
+the MCU. A good example here is an EMG sensor, these sensors are nothing
+more than electrodes. For this reason it is necessary to ensure that
+they do not electrocute the individual wearing them. This is done using
+with Electro Static Discharge (ESD) protection. This and the model to use
+typically are given in the datasheet, below is an image of a typical
+ESD protection circuit.<p><img src=/esd-protection.png alt="ESD Protection Circuit"><p>Now to put into perspective here is an image of the sensor circuit that
+was designed for the WearME Brace.<p><img src=/sensors-wearme.png alt="Sensors board WearME"><p>This board is not the finished board, as the finished one was smaller and
+more compact. However you can see from here the protection circuit.<p>Now the bigger problem is one of calibration, each sensor is a different
+form of calibration. When working at Mycionics camera calibration took
+3-4 months before we automated it fully. It is mandatory to ensure a decent
+calibration otherwise all the work you do will be imaginary, and easily
+changed based on the environment.<h1 id=most-important-tidbits>Most Important Tidbits:</h1><ul><li>MEASURE YOUR ELECTRICAL COMPONENTS ESPECIALLY SENSORS<li>Calibration is incredibly important<li>There are ways to use capacitance in between 2 board layers in order to measure touch, this was an incredibly interesting conversation I had<li>Use feedback loops to ensure you are getting the correct data</ul></div><div class=post-comments></div><div class=push></div></div><footer class="footer text-center"><p>Copyright &copy; 2019 Michael Buchel -
+<span class=credit>Powered by
+<a target=_blank href=https://gohugo.io>Hugo</a>
+and
+<a target=_blank href=https://github.com/LordMathis/hugo-theme-nix/>Nix</a> theme.</span></footer></body>

@@ -1,0 +1,41 @@
+<!doctype html><html><head><title>Real Time &middot; Michael Buchel</title><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1,maximum-scale=1"><script src=https://code.jquery.com/jquery-3.1.1.min.js integrity="sha256-hVVnYaiADRTO2PzUGmuLJr8BLUSjGIZsDYGmIJLv2b8=" crossorigin=anonymous></script><link rel=stylesheet href=https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css integrity=sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u crossorigin=anonymous><script src=https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js integrity=sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa crossorigin=anonymous></script><link rel=stylesheet href=https://use.fontawesome.com/releases/v5.7.2/css/all.css integrity=sha384-fnmOCqbTlWIlj8LyTjo7mOUStjsKC4pOpQbqyi7RrhN7udi9RwhKkMHpvLbHG9Sr crossorigin=anonymous><link rel=stylesheet href=https://mbuchel.github.io/css/nix.css><link rel="shortcut icon" href=/favicon.ico><link href="https://fonts.googleapis.com/css?family=Inconsolata%7COpen+Sans%7CConcert+One" rel=stylesheet><link rel=stylesheet href=https://cdn.jsdelivr.net/npm/katex@0.10.2/dist/katex.min.css integrity=sha384-yFRtMMDnQtDRO8rLpMIKrtPCD5jdktao2TV19YiZYWMDkUR5GQZR/NOVTdquEx1j crossorigin=anonymous><script defer src=https://cdn.jsdelivr.net/npm/katex@0.10.2/dist/katex.min.js integrity=sha384-9Nhn55MVVN0/4OFx7EE5kpFBPsEMZxKTCnA+4fqDmg12eCTqGi6+BB2LjY8brQxJ crossorigin=anonymous></script><script defer src=https://cdn.jsdelivr.net/npm/katex@0.10.2/dist/contrib/auto-render.min.js integrity=sha384-kWPLUVMOks5AQFrykwIup5lo0m3iMkkHrD0uJ4H5cjeGihAutqP0yW0J6dpFiVkI crossorigin=anonymous onload=renderMathInElement(document.body);></script></head><body><header><nav class="navbar navbar-default navbar-fixed-top navbar-inverse font-header"><div class=container-fluid><div class=navbar-header><button type=button class="navbar-toggle collapsed" data-toggle=collapse data-target=#navbar-collapse-1 aria-expanded=false>
+<span class=sr-only>Toggle navigation</span>
+<span class=icon-bar></span><span class=icon-bar></span><span class=icon-bar></span></button>
+<a class=navbar-brand id=green-terminal href=https://mbuchel.github.io/>mbuchel@mim-tech ~ $</a></div><div class="collapse navbar-collapse" id=navbar-collapse-1><ul class="nav navbar-nav navbar-right"><li><a href=https://mbuchel.github.io/>/home/mbuchel</a><li class=dropdown><a href=/mim>~/mim-tech</a><li class=dropdown><a href=/work>~/work</a><li class=dropdown><a href=/knowledge>~/knowledge</a></ul></div></div></nav></header><div class="container wrapper"><h1><a href=https://mbuchel.github.io/knowledge/real-time/>Real Time</a></h1><span class=post-date>Aug 10, 2019</span><div class=post-content><p><img src=/real-time.jpg alt="Real Time Systems"><h1 id=background-knowledge>Background Knowledge:</h1><p>Human computer interfaces are growing more prominent as we enter a more
+digitalized society. Robotics must react to split second decisions, in a
+quick and timely manner. In the case of self driving cars it is even more
+important as we see now, that effects must be instantaneous. Most robotics
+systems today unfortunately do not use RTOS systems, but rather use ROS.
+Which has quite a large delay in processing information. With moore&rsquo;s law,
+the effects seem negligible however over time they add up and cause glitchs.
+Below is a more indepth view of RTOS systems.<h1 id=quick-run>Quick Run:</h1><p>There are 2 types of RTOS: soft real time systems, and hard real time
+systems. The difference between them is in a soft real time system deadlines
+can be missed, while in a hard real time system deadlines cannot be missed.
+Within these 2 systems there are also 2 different schools of scheduling,
+the first is an event driven model, and the second is a time sharing model.<h2 id=event-driven-model-interrupts>Event Driven Model (Interrupts):</h2><p>This is a model which is very commonly used, especially among new engineers.
+Interrupts seem to be the perfect solution due to the fact you do not need
+to know when a particular thing is going to trigger. Unfortunately,
+interrupts also have a very negative association with them. Most engineers
+do not learn how to properly handle interrupts. The greatest example of
+improper interrupt handling is the Mars Rover, where a critical interrupt
+was not being triggered due to the fact that a lower priority interrupt was
+being triggered, and interrupts were being turned off inside the interrupt.
+Preventing the critical interrupt from being triggered.<h2 id=poll-driven-model>Poll Driven Model:</h2><p>This is a model where we have a single timer which alternates through tasks
+to finish them in a timely manner. This one also has flaws such as tasks
+which are in a waiting state will still have an alloted time period in which
+the CPU is waiting for it.<h2 id=hybrid-systems>Hybrid Systems:</h2><p>This is the smarter systems as it allows the best of both worlds. You create
+a form of state machine for each task. The tasks can be pushed and popped
+on and off of priority queues for execution based on if they are in an
+executing state or in a waiting state (waiting for user input). This allows
+you to code correctly for interrupts which involves preventing further
+interrupts, and minimizes the code necessary to be executed in an interrupt
+state (because interrupt states are privileged CPU states that allow more
+access). It also allows us to have a proper way for turning the system
+into a low power consumption were we only monitor for external interrupts.
+This is possible in systems which do not have to be constantly computing.
+We can also use time sharing for the scheduling of the CPU, to allow us
+not to miss crucial deadlines.<h1 id=most-important-tidbits>Most Important Tidbits:</h1><ul><li>Hybrid systems are best<li>Microchip has a very nice explanation on how to make a basic RTOS<li>FreeRTOS is a very nice and complete RTOS system<li>Actor programming is a programming style typically used where events pass events to each other as communication methods, this is how ROS is set up</ul></div><div class=post-comments></div><div class=push></div></div><footer class="footer text-center"><p>Copyright &copy; 2019 Michael Buchel -
+<span class=credit>Powered by
+<a target=_blank href=https://gohugo.io>Hugo</a>
+and
+<a target=_blank href=https://github.com/LordMathis/hugo-theme-nix/>Nix</a> theme.</span></footer></body>

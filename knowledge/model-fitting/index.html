@@ -1,0 +1,25 @@
+<!doctype html><html><head><title>Model Fitting &middot; Michael Buchel</title><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1,maximum-scale=1"><script src=https://code.jquery.com/jquery-3.1.1.min.js integrity="sha256-hVVnYaiADRTO2PzUGmuLJr8BLUSjGIZsDYGmIJLv2b8=" crossorigin=anonymous></script><link rel=stylesheet href=https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css integrity=sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u crossorigin=anonymous><script src=https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js integrity=sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa crossorigin=anonymous></script><link rel=stylesheet href=https://use.fontawesome.com/releases/v5.7.2/css/all.css integrity=sha384-fnmOCqbTlWIlj8LyTjo7mOUStjsKC4pOpQbqyi7RrhN7udi9RwhKkMHpvLbHG9Sr crossorigin=anonymous><link rel=stylesheet href=https://mbuchel.github.io/css/nix.css><link rel="shortcut icon" href=/favicon.ico><link href="https://fonts.googleapis.com/css?family=Inconsolata%7COpen+Sans%7CConcert+One" rel=stylesheet><link rel=stylesheet href=https://cdn.jsdelivr.net/npm/katex@0.10.2/dist/katex.min.css integrity=sha384-yFRtMMDnQtDRO8rLpMIKrtPCD5jdktao2TV19YiZYWMDkUR5GQZR/NOVTdquEx1j crossorigin=anonymous><script defer src=https://cdn.jsdelivr.net/npm/katex@0.10.2/dist/katex.min.js integrity=sha384-9Nhn55MVVN0/4OFx7EE5kpFBPsEMZxKTCnA+4fqDmg12eCTqGi6+BB2LjY8brQxJ crossorigin=anonymous></script><script defer src=https://cdn.jsdelivr.net/npm/katex@0.10.2/dist/contrib/auto-render.min.js integrity=sha384-kWPLUVMOks5AQFrykwIup5lo0m3iMkkHrD0uJ4H5cjeGihAutqP0yW0J6dpFiVkI crossorigin=anonymous onload=renderMathInElement(document.body);></script></head><body><header><nav class="navbar navbar-default navbar-fixed-top navbar-inverse font-header"><div class=container-fluid><div class=navbar-header><button type=button class="navbar-toggle collapsed" data-toggle=collapse data-target=#navbar-collapse-1 aria-expanded=false>
+<span class=sr-only>Toggle navigation</span>
+<span class=icon-bar></span><span class=icon-bar></span><span class=icon-bar></span></button>
+<a class=navbar-brand id=green-terminal href=https://mbuchel.github.io/>mbuchel@mim-tech ~ $</a></div><div class="collapse navbar-collapse" id=navbar-collapse-1><ul class="nav navbar-nav navbar-right"><li><a href=https://mbuchel.github.io/>/home/mbuchel</a><li class=dropdown><a href=/mim>~/mim-tech</a><li class=dropdown><a href=/work>~/work</a><li class=dropdown><a href=/knowledge>~/knowledge</a></ul></div></div></nav></header><div class="container wrapper"><h1><a href=https://mbuchel.github.io/knowledge/model-fitting/>Model Fitting</a></h1><span class=post-date>Aug 10, 2019</span><div class=post-content><p><img src=/model-fitting.png alt="Model Fitting"><h1 id=background-knowledge>Background Knowledge:</h1><p>Model fitting is a problem that has been around as long as physics.
+The main purpose of physics is to reliably predict the changes in the
+world around us. Unfortunately while research has been done in this field,
+it is quite limited and we can only fit models to specific datasets.
+While this is the case, we have simpler methods for the time being,
+such as neural networks.<h1 id=quick-run>Quick Run:</h1><p>The first step to model fitting is to find the variables we wish to vary.
+This task can take quite a long time, as we see when we look at the science
+of physics. Once we determine the variables, we can start plotting them on
+a graph. This only really works when there is 1-2 very well defined
+variables, more than this and we run into complexity issues. Thankfully
+other forms of computer science came up with a solution to this. Rather
+than make a precise model fit for an object, make a bounding object that
+adheres to a certain model. Next match the bounding object to the dataset
+and if there is a match of a certain threshold or higher, we identify the
+object as the bound object. This is a very common technique and was used
+quite a lot in my Computer Vision experience. A perfect example here is
+the superquadratics which i talk about in another post.<h1 id=most-important-tidbits>Most Important Tidbits:</h1><p>As of this time I cannot think of any really interesting tidbits to add
+here.</div><div class=post-comments></div><div class=push></div></div><footer class="footer text-center"><p>Copyright &copy; 2019 Michael Buchel -
+<span class=credit>Powered by
+<a target=_blank href=https://gohugo.io>Hugo</a>
+and
+<a target=_blank href=https://github.com/LordMathis/hugo-theme-nix/>Nix</a> theme.</span></footer></body>

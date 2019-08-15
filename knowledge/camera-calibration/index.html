@@ -1,0 +1,28 @@
+<!doctype html><html><head><title>Camera Calibration &middot; Michael Buchel</title><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1,maximum-scale=1"><script src=https://code.jquery.com/jquery-3.1.1.min.js integrity="sha256-hVVnYaiADRTO2PzUGmuLJr8BLUSjGIZsDYGmIJLv2b8=" crossorigin=anonymous></script><link rel=stylesheet href=https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css integrity=sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u crossorigin=anonymous><script src=https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js integrity=sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa crossorigin=anonymous></script><link rel=stylesheet href=https://use.fontawesome.com/releases/v5.7.2/css/all.css integrity=sha384-fnmOCqbTlWIlj8LyTjo7mOUStjsKC4pOpQbqyi7RrhN7udi9RwhKkMHpvLbHG9Sr crossorigin=anonymous><link rel=stylesheet href=https://mbuchel.github.io/css/nix.css><link rel="shortcut icon" href=/favicon.ico><link href="https://fonts.googleapis.com/css?family=Inconsolata%7COpen+Sans%7CConcert+One" rel=stylesheet><link rel=stylesheet href=https://cdn.jsdelivr.net/npm/katex@0.10.2/dist/katex.min.css integrity=sha384-yFRtMMDnQtDRO8rLpMIKrtPCD5jdktao2TV19YiZYWMDkUR5GQZR/NOVTdquEx1j crossorigin=anonymous><script defer src=https://cdn.jsdelivr.net/npm/katex@0.10.2/dist/katex.min.js integrity=sha384-9Nhn55MVVN0/4OFx7EE5kpFBPsEMZxKTCnA+4fqDmg12eCTqGi6+BB2LjY8brQxJ crossorigin=anonymous></script><script defer src=https://cdn.jsdelivr.net/npm/katex@0.10.2/dist/contrib/auto-render.min.js integrity=sha384-kWPLUVMOks5AQFrykwIup5lo0m3iMkkHrD0uJ4H5cjeGihAutqP0yW0J6dpFiVkI crossorigin=anonymous onload=renderMathInElement(document.body);></script></head><body><header><nav class="navbar navbar-default navbar-fixed-top navbar-inverse font-header"><div class=container-fluid><div class=navbar-header><button type=button class="navbar-toggle collapsed" data-toggle=collapse data-target=#navbar-collapse-1 aria-expanded=false>
+<span class=sr-only>Toggle navigation</span>
+<span class=icon-bar></span><span class=icon-bar></span><span class=icon-bar></span></button>
+<a class=navbar-brand id=green-terminal href=https://mbuchel.github.io/>mbuchel@mim-tech ~ $</a></div><div class="collapse navbar-collapse" id=navbar-collapse-1><ul class="nav navbar-nav navbar-right"><li><a href=https://mbuchel.github.io/>/home/mbuchel</a><li class=dropdown><a href=/mim>~/mim-tech</a><li class=dropdown><a href=/work>~/work</a><li class=dropdown><a href=/knowledge>~/knowledge</a></ul></div></div></nav></header><div class="container wrapper"><h1><a href=https://mbuchel.github.io/knowledge/camera-calibration/>Camera Calibration</a></h1><span class=post-date>Aug 10, 2019</span><div class=post-content><p><img src=/camera-calibration.gif alt="Camera Calibration"><h1 id=background-knowledge>Background Knowledge:</h1><p>Calibration for sensors is arguably the most important step you can take
+for making sense of data. This was without a doubt the hardest task we had
+at Mycionics, due to the complexity involved in a proper camera calibration.
+There are multiple types of camera calibrations, depending on your
+particular application a different calibration should be used. I will only
+go over the ones offered by OpenCV libraries.<h1 id=quick-run>Quick Run:</h1><p>Now there are plenty of tutorials on how camera calibration can be
+performed, I will skip past that and focus on the different calibration
+boards themselves, and which ones should be used for which purpose.<h2 id=circles>Circles:</h2><p><img src=/circles-calib.png alt="Circles Calibration"><p>I have lumped regular circles with asymmetrical circles together under
+this field. This is a fairly popular technique due to the fact we do not
+need a measurement of the black circles. This lowers calculation error,
+and by certain authors been claimed to be a less biased calibration scheme.
+As it allows for more accurate identification, and less false positives.<h2 id=checkerboard>Checkerboard:</h2><p><img src=/check-calib.png alt="Checkerboard Calibration"><p>We have progressed quite a bit in computer vision, to allow us to detect
+corners quite quickly. This form of calibration will give a pretty fast
+but typically inaccurate calibration. It is hard to determine also what the
+orientation of the checkerboard is, this is the biggest concern with the
+calibration process.<h2 id=aruco>ArUco:</h2><p><img src=/aruco-calib.png alt="ArUco Calibration"><p>An attempt to fix the issue in the checkerboard pattern is to encode data,
+stating which number each of the individual squares is. Unfortunately this
+technique also lack precision, and ChArUco was designed to fix this.<h2 id=charuco>ChArUco:</h2><p><img src=/charuco-calib.png alt="ChArUco Calibration"><p>This is probably your best bet at a low error calibration. Combining the
+best of 2 worlds, the precision of checkerboard corner identification with
+location data. This allows you to determine current blind spots, and inform
+the calibrator to handle these blind spots.<h1 id=most-important-tidbits>Most Important Tidbits:</h1><ul><li>Use ChArUco<li>You can calculate error for single images and drop them from calibration<li>Stereo Calibration has to be performed after intrinsic calibrations</ul></div><div class=post-comments></div><div class=push></div></div><footer class="footer text-center"><p>Copyright &copy; 2019 Michael Buchel -
+<span class=credit>Powered by
+<a target=_blank href=https://gohugo.io>Hugo</a>
+and
+<a target=_blank href=https://github.com/LordMathis/hugo-theme-nix/>Nix</a> theme.</span></footer></body>

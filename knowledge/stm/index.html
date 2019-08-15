@@ -1,0 +1,184 @@
+<!doctype html><html><head><title>STM &middot; Michael Buchel</title><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1,maximum-scale=1"><script src=https://code.jquery.com/jquery-3.1.1.min.js integrity="sha256-hVVnYaiADRTO2PzUGmuLJr8BLUSjGIZsDYGmIJLv2b8=" crossorigin=anonymous></script><link rel=stylesheet href=https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css integrity=sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u crossorigin=anonymous><script src=https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js integrity=sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa crossorigin=anonymous></script><link rel=stylesheet href=https://use.fontawesome.com/releases/v5.7.2/css/all.css integrity=sha384-fnmOCqbTlWIlj8LyTjo7mOUStjsKC4pOpQbqyi7RrhN7udi9RwhKkMHpvLbHG9Sr crossorigin=anonymous><link rel=stylesheet href=https://mbuchel.github.io/css/nix.css><link rel="shortcut icon" href=/favicon.ico><link href="https://fonts.googleapis.com/css?family=Inconsolata%7COpen+Sans%7CConcert+One" rel=stylesheet><link rel=stylesheet href=https://cdn.jsdelivr.net/npm/katex@0.10.2/dist/katex.min.css integrity=sha384-yFRtMMDnQtDRO8rLpMIKrtPCD5jdktao2TV19YiZYWMDkUR5GQZR/NOVTdquEx1j crossorigin=anonymous><script defer src=https://cdn.jsdelivr.net/npm/katex@0.10.2/dist/katex.min.js integrity=sha384-9Nhn55MVVN0/4OFx7EE5kpFBPsEMZxKTCnA+4fqDmg12eCTqGi6+BB2LjY8brQxJ crossorigin=anonymous></script><script defer src=https://cdn.jsdelivr.net/npm/katex@0.10.2/dist/contrib/auto-render.min.js integrity=sha384-kWPLUVMOks5AQFrykwIup5lo0m3iMkkHrD0uJ4H5cjeGihAutqP0yW0J6dpFiVkI crossorigin=anonymous onload=renderMathInElement(document.body);></script></head><body><header><nav class="navbar navbar-default navbar-fixed-top navbar-inverse font-header"><div class=container-fluid><div class=navbar-header><button type=button class="navbar-toggle collapsed" data-toggle=collapse data-target=#navbar-collapse-1 aria-expanded=false>
+<span class=sr-only>Toggle navigation</span>
+<span class=icon-bar></span><span class=icon-bar></span><span class=icon-bar></span></button>
+<a class=navbar-brand id=green-terminal href=https://mbuchel.github.io/>mbuchel@mim-tech ~ $</a></div><div class="collapse navbar-collapse" id=navbar-collapse-1><ul class="nav navbar-nav navbar-right"><li><a href=https://mbuchel.github.io/>/home/mbuchel</a><li class=dropdown><a href=/mim>~/mim-tech</a><li class=dropdown><a href=/work>~/work</a><li class=dropdown><a href=/knowledge>~/knowledge</a></ul></div></div></nav></header><div class="container wrapper"><h1><a href=https://mbuchel.github.io/knowledge/stm/>STM</a></h1><span class=post-date>Aug 10, 2019</span><div class=post-content><p><img src=/stm-doom.png alt="Doom STM"><h1 id=background-knowledge>Background Knowledge:</h1><p>The picture above is an STM32F429 dev board which has Doom working on
+it. The Doom port is Chocolate Doom, and I used it as an experience to
+figure out how to code for the STM32 this way. STM32 is a 32 bit ARM
+CPU specifically designed for embedded systems. I had to work with the
+STM32 for the MR-Clutch arm robot, where it was supposed to act as the
+controller for the arm, and the Jetson TX2 was the brain of the system.<h1 id=quick-run>Quick Run:</h1><p>The hardest challenge in the STM32 learning curve was the linker scripts.
+Each CPU has a different memory map, and as such the code must appear in
+different sections of the CPU in order to work correctly. The biggest help
+here were code generators, and the datasheets for the chip I used. Below
+is the linker script I used for the STM32.<div class=highlight><pre style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-ld data-lang=ld>ENTRY(Reset_Handler)
+
+STACK_SIZE = 0x100;
+HEAP_SIZE = 0x100;
+
+PROVIDE(_estack = ALIGN(ORIGIN(RAM) + LENGTH(RAM) - 8, 8));
+
+SECTIONS
+{
+	.isr_vector :
+	{
+		. = ALIGN(4);
+		KEEP(*(.isr_vector))
+		. = ALIGN(4);
+	} &gt;FLASH
+
+	.text :
+	{
+		__preinit_array_start = .;
+		KEEP(*(.preinit_array*))
+		__preinit_array_end = .;
+
+		__ctor_start__ = .;
+		__init_array_start = .;
+		KEEP(SORT(*)(.init_array))
+		__ctors_end__ = .;
+		__init_array_end = .;
+		__dtors_start__ = .;
+		
+		. = ALIGN(4);
+		*(.text)
+		*(.text.*)
+		*(.rodata)
+		*(.rodata.*)
+
+		*(.eh_frame_hdr)
+		*(.eh_frame)
+		*(.ARM.extab* .gnu.linkonce.armextab.*)
+
+		. = ALIGN(4);
+	} &gt;FLASH
+
+	__exidx_start = .;
+
+	. = ALIGN(4);
+	_etext = .;
+	_sidata = _etext;
+
+	.data :
+	{
+		. = ALIGN(4);
+		_sdata = .;
+		*(.data)
+		*(.data.*)
+	} &gt; RAM AT &gt; FLASH
+
+	.ramfunc :
+	{
+		. = ALIGN(4);
+		*(.ramfunc)
+		*(.ramfunc.*)
+		. = ALIGN(4);
+		_edata = .;
+	} &gt; RAM AT &gt; FLASH
+
+	.bss (NOLOAD):
+	{
+		. = ALIGN(4);
+		_sbss = .;
+		*(.bss)
+		*(.bss.*)
+		*(COMMON)
+		. = ALIGN(4);
+		_ebss = .;
+	} &gt;RAM
+
+	.noinit (NOLOAD):
+	{
+		. = ALIGN(4);
+		_start_of_noinit = .;
+		*(.noinit)
+		*(.noinit.*)
+		. = ALIGN(4);
+		_end_of_noinit = .;
+		_end = .;
+		__end = .;
+	} &gt;RAM
+
+	.battram (NOLOAD):
+	{
+		. = ALIGN(4);
+		_start_of_batt_ram = .;
+		*(.battram)
+		*(.battram.*)
+		_end_of_batt_ram = .;
+	} &gt; BATTRAM
+
+	.ccram :
+	{
+		. = ALIGN(4);
+		_start_of_ccram = .;
+		*(.ccram)
+		*(.ccram.*)
+		_end_of_ccram = .;
+	} &gt; CCRAM
+
+	._usr_stack_heap :
+	{
+		. = ALIGN(4);
+		. = . + STACK_SIZE;
+		. = . + HEAP_SIZE;
+		. = ALIGN(4);
+	} &gt;RAM
+
+	PROVIDE(_heap = _ebss);
+	PROVIDE(_eheap = _estack - STACK_SIZE);
+}
+
+PROVIDE(__top_of_stack = _estack);
+PROVIDE(__idata_start = _sidata);
+PROVIDE(__data_start = _sdata);
+PROVIDE(__data_end = _edata);
+PROVIDE(__bss_start = _sbss);
+PROVIDE(__bss_end = _ebss);</code></pre></div><p>Now this is all good and well but it does not handle the startup code.
+All CPUs have a section of code that is run at the very beginning, where
+the program counter on resets. This code can be found by looking up STM
+startup files. The harder section is the libc which is not by default on
+barebones systems. Things such as strcmp are taken for granted, due to
+size constraints I used asm for majority of the string parsing library.
+Below is a section of code from the string parsing I made for the stm32.<div class=highlight><pre style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-S data-lang=S><span style=color:#ae81ff>.</span>syntax unified
+<span style=color:#ae81ff>.</span>global memcpy
+memcpy<span style=color:#f92672>:</span>
+	mov	r12, r0
+<span style=color:#ae81ff>1</span><span style=color:#f92672>:</span>
+	subs	r2, <span style=color:#75715e>#1</span>
+	bmi	<span style=color:#ae81ff>2</span>f
+	ldrb	r3, [r1], <span style=color:#75715e>#1</span>
+	strb	r3, [r0], <span style=color:#75715e>#1</span>
+	b	<span style=color:#ae81ff>1</span>b
+<span style=color:#ae81ff>2</span><span style=color:#f92672>:</span>
+	mov	r0, r12
+    bx lr
+
+<span style=color:#ae81ff>.</span>global memset
+memset<span style=color:#f92672>:</span>
+	mov r12, r0
+<span style=color:#ae81ff>1</span><span style=color:#f92672>:</span>
+	subs	r2, <span style=color:#75715e>#1</span>
+	bmi	<span style=color:#ae81ff>2</span>f
+	strb	r1, [r0], <span style=color:#75715e>#1</span>
+	b	<span style=color:#ae81ff>1</span>b
+<span style=color:#ae81ff>2</span><span style=color:#f92672>:</span>
+	mov r0, r12
+    bx lr
+
+<span style=color:#ae81ff>.</span>global strlen
+strlen<span style=color:#f92672>:</span>
+	mov r2, r0
+<span style=color:#ae81ff>1</span><span style=color:#f92672>:</span>
+	ldrb r1, [r0], <span style=color:#75715e>#1</span>
+	tst r1, r1
+	bne <span style=color:#ae81ff>1</span>b
+	sub r0, r0, r2
+	sub r0, r0, <span style=color:#75715e>#1</span>
+    bx lr</code></pre></div><p>Now while this is not the full string library, it was all that
+was needed. I could make this more effective in several ways, however
+I wrote this code when I was younger and feel it would not be right
+to change the code now. I may write a post on optimizing assembly later.<h1 id=most-important-tidbits>Most Important Tidbits:</h1><ul><li>ASM is easy once you get the hang of it<li>.S files allow preprocessor commands if you use GAS, and .s files do not<li>STM32 has a greater set of libraries than the PIC brand MCUs, however harder to learn<li>Remember to follow the ABI for making ASM functions, otherwise you will be unable to call ASM functions from C (unless you use inline asm)</ul></div><div class=post-comments></div><div class=push></div></div><footer class="footer text-center"><p>Copyright &copy; 2019 Michael Buchel -
+<span class=credit>Powered by
+<a target=_blank href=https://gohugo.io>Hugo</a>
+and
+<a target=_blank href=https://github.com/LordMathis/hugo-theme-nix/>Nix</a> theme.</span></footer></body>

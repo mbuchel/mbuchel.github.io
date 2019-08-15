@@ -1,0 +1,29 @@
+<!doctype html><html><head><title>Power Control &middot; Michael Buchel</title><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1,maximum-scale=1"><script src=https://code.jquery.com/jquery-3.1.1.min.js integrity="sha256-hVVnYaiADRTO2PzUGmuLJr8BLUSjGIZsDYGmIJLv2b8=" crossorigin=anonymous></script><link rel=stylesheet href=https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css integrity=sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u crossorigin=anonymous><script src=https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js integrity=sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa crossorigin=anonymous></script><link rel=stylesheet href=https://use.fontawesome.com/releases/v5.7.2/css/all.css integrity=sha384-fnmOCqbTlWIlj8LyTjo7mOUStjsKC4pOpQbqyi7RrhN7udi9RwhKkMHpvLbHG9Sr crossorigin=anonymous><link rel=stylesheet href=https://mbuchel.github.io/css/nix.css><link rel="shortcut icon" href=/favicon.ico><link href="https://fonts.googleapis.com/css?family=Inconsolata%7COpen+Sans%7CConcert+One" rel=stylesheet><link rel=stylesheet href=https://cdn.jsdelivr.net/npm/katex@0.10.2/dist/katex.min.css integrity=sha384-yFRtMMDnQtDRO8rLpMIKrtPCD5jdktao2TV19YiZYWMDkUR5GQZR/NOVTdquEx1j crossorigin=anonymous><script defer src=https://cdn.jsdelivr.net/npm/katex@0.10.2/dist/katex.min.js integrity=sha384-9Nhn55MVVN0/4OFx7EE5kpFBPsEMZxKTCnA+4fqDmg12eCTqGi6+BB2LjY8brQxJ crossorigin=anonymous></script><script defer src=https://cdn.jsdelivr.net/npm/katex@0.10.2/dist/contrib/auto-render.min.js integrity=sha384-kWPLUVMOks5AQFrykwIup5lo0m3iMkkHrD0uJ4H5cjeGihAutqP0yW0J6dpFiVkI crossorigin=anonymous onload=renderMathInElement(document.body);></script></head><body><header><nav class="navbar navbar-default navbar-fixed-top navbar-inverse font-header"><div class=container-fluid><div class=navbar-header><button type=button class="navbar-toggle collapsed" data-toggle=collapse data-target=#navbar-collapse-1 aria-expanded=false>
+<span class=sr-only>Toggle navigation</span>
+<span class=icon-bar></span><span class=icon-bar></span><span class=icon-bar></span></button>
+<a class=navbar-brand id=green-terminal href=https://mbuchel.github.io/>mbuchel@mim-tech ~ $</a></div><div class="collapse navbar-collapse" id=navbar-collapse-1><ul class="nav navbar-nav navbar-right"><li><a href=https://mbuchel.github.io/>/home/mbuchel</a><li class=dropdown><a href=/mim>~/mim-tech</a><li class=dropdown><a href=/work>~/work</a><li class=dropdown><a href=/knowledge>~/knowledge</a></ul></div></div></nav></header><div class="container wrapper"><h1><a href=https://mbuchel.github.io/knowledge/power-control/>Power Control</a></h1><span class=post-date>Aug 10, 2019</span><div class=post-content><p><img src=/power.jpg alt="Power Image"><h1 id=background-knowledge>Background Knowledge:</h1><p>All electrical systems require a proper power management
+system. My main experience with power management has been
+in the battery management field as well as wireless harvesting.
+However due to practicality issues involved with wireless
+harvesting the purpose of this post will be focused on battery
+power management, as well as power supply management.<h1 id=quick-run>Quick Run:</h1><p>There are plenty of circuits for controlling the charge a
+lithium ion battery gets. This post will discribe how they
+work, I am also refraining from speaking about power management
+as this is a concept that is taught tirelessly at engineering
+schools.<p>Lithium ion batteries require you to charge in a constant
+current to constant voltage fashion. This means you start
+charging a cell with a constant current, and once you reach
+the correct voltage you switch over to using a constant
+voltage instead.<p>The hardest part of this is the 1% error margin on either
+side. If you undercharge by 1% you end up reducing carrying
+capacity of the battery. While if you overcharge by 1% you
+risk battery failure.<p>There is a danger chart associated with lithium ion batteries
+which is included below:<p><img src=/danger-lithium.png alt="Lithium Ion Safety Window"><p>The role of the charge circuit is to switch between cells to
+prevent a single cell from stepping outside the safety window.<p>Most charging circuits are designed using a flyback design,
+this is to allow the quick switching of charging different cells
+in the battery system. A flyback design image is posted below:<p><img src=flyback.jpg alt="Flyback Transformer"><p>As shown the flyback is used as an energy storage device, instead
+of a transformer.<h1 id=most-important-tidbits>Most Important Tidbits:</h1><p>The following I found to be interesting tidbits:<ul><li>Flyback Transformers are used as energy storage devices<li>Flyback Transformers are more like a parallel set of inductors than a transformer</ul></div><div class=post-comments></div><div class=push></div></div><footer class="footer text-center"><p>Copyright &copy; 2019 Michael Buchel -
+<span class=credit>Powered by
+<a target=_blank href=https://gohugo.io>Hugo</a>
+and
+<a target=_blank href=https://github.com/LordMathis/hugo-theme-nix/>Nix</a> theme.</span></footer></body>

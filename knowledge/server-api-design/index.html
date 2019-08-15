@@ -1,0 +1,32 @@
+<!doctype html><html><head><title>Server API Design &middot; Michael Buchel</title><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1,maximum-scale=1"><script src=https://code.jquery.com/jquery-3.1.1.min.js integrity="sha256-hVVnYaiADRTO2PzUGmuLJr8BLUSjGIZsDYGmIJLv2b8=" crossorigin=anonymous></script><link rel=stylesheet href=https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css integrity=sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u crossorigin=anonymous><script src=https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js integrity=sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa crossorigin=anonymous></script><link rel=stylesheet href=https://use.fontawesome.com/releases/v5.7.2/css/all.css integrity=sha384-fnmOCqbTlWIlj8LyTjo7mOUStjsKC4pOpQbqyi7RrhN7udi9RwhKkMHpvLbHG9Sr crossorigin=anonymous><link rel=stylesheet href=https://mbuchel.github.io/css/nix.css><link rel="shortcut icon" href=/favicon.ico><link href="https://fonts.googleapis.com/css?family=Inconsolata%7COpen+Sans%7CConcert+One" rel=stylesheet><link rel=stylesheet href=https://cdn.jsdelivr.net/npm/katex@0.10.2/dist/katex.min.css integrity=sha384-yFRtMMDnQtDRO8rLpMIKrtPCD5jdktao2TV19YiZYWMDkUR5GQZR/NOVTdquEx1j crossorigin=anonymous><script defer src=https://cdn.jsdelivr.net/npm/katex@0.10.2/dist/katex.min.js integrity=sha384-9Nhn55MVVN0/4OFx7EE5kpFBPsEMZxKTCnA+4fqDmg12eCTqGi6+BB2LjY8brQxJ crossorigin=anonymous></script><script defer src=https://cdn.jsdelivr.net/npm/katex@0.10.2/dist/contrib/auto-render.min.js integrity=sha384-kWPLUVMOks5AQFrykwIup5lo0m3iMkkHrD0uJ4H5cjeGihAutqP0yW0J6dpFiVkI crossorigin=anonymous onload=renderMathInElement(document.body);></script></head><body><header><nav class="navbar navbar-default navbar-fixed-top navbar-inverse font-header"><div class=container-fluid><div class=navbar-header><button type=button class="navbar-toggle collapsed" data-toggle=collapse data-target=#navbar-collapse-1 aria-expanded=false>
+<span class=sr-only>Toggle navigation</span>
+<span class=icon-bar></span><span class=icon-bar></span><span class=icon-bar></span></button>
+<a class=navbar-brand id=green-terminal href=https://mbuchel.github.io/>mbuchel@mim-tech ~ $</a></div><div class="collapse navbar-collapse" id=navbar-collapse-1><ul class="nav navbar-nav navbar-right"><li><a href=https://mbuchel.github.io/>/home/mbuchel</a><li class=dropdown><a href=/mim>~/mim-tech</a><li class=dropdown><a href=/work>~/work</a><li class=dropdown><a href=/knowledge>~/knowledge</a></ul></div></div></nav></header><div class="container wrapper"><h1><a href=https://mbuchel.github.io/knowledge/server-api-design/>Server API Design</a></h1><span class=post-date>Aug 10, 2019</span><div class=post-content><p><img src=/server-api.png alt="Server API Design"><h1 id=background-knowledge>Background Knowledge:</h1><p>Servers are the backbone of all our smart electronics now, they
+act as the brains behind our connected devices. As such, server
+design is an ever increasing field of coding. Unfortunately, we
+have some poorly designed servers, and there is no standardized
+rules for server design. From my experience coding servers, I have
+learned some of the standards in a few companies. Which I took from
+this what works and what does not, and implemented this as the standards
+for server programming at <a href=https://themimgroup.com/>MIM</a>.<h1 id=quick-run>Quick Run:</h1><p>From constantly having to recode the server base, I have decided
+to do what some of the other companies do. Create a Swagger document
+first, and get that approved. The reason for this is at one job
+I had to recode the entire server code 3 times in the span of a week.
+Luckily the server was made in Haskell so it was relatively simple
+to do this. However this was changed to C++, and it became a lot harder
+to code this up (used the regex library in STL to make it simpler for
+me). From now on I write swagger documentation first, approve it,
+and ONLY than start coding it up.<p><img src=/swagger.png alt=Swagger><p>The benefit of swagger is a default codegen, unfortunately it does
+not handle more complex languages/systems. Some of the downsides are
+the lack of proper cookie support, which is a quite common task now.<p>The biggest area of API design revolves around REST API development.
+These are systems designed to have minimalistic input from the server,
+the client initiates all connections. Now this poses a challenge, how
+do we handle notifications?<p>Well we can handle notifications using another server in the background
+and a series of webhooks. The other way is to constantly refresh the API
+we are looking at. The first way is ideal as it allows for us to limit
+bandwidth, however for individuals who do not know how to do this the
+second way offers a simple way to do it.<h1 id=most-important-tidbits>Most Important Tidbits:</h1><ul><li>Just because Swagger documentation is approved does not mean it is good for the final product<li>Swagger codegen still requires quite a few changes<li>JSON objects are the easiest to work with on both server and client sides</ul></div><div class=post-comments></div><div class=push></div></div><footer class="footer text-center"><p>Copyright &copy; 2019 Michael Buchel -
+<span class=credit>Powered by
+<a target=_blank href=https://gohugo.io>Hugo</a>
+and
+<a target=_blank href=https://github.com/LordMathis/hugo-theme-nix/>Nix</a> theme.</span></footer></body>

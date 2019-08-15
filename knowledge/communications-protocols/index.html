@@ -1,0 +1,352 @@
+<!doctype html><html><head><title>Communications Protocols &middot; Michael Buchel</title><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1,maximum-scale=1"><script src=https://code.jquery.com/jquery-3.1.1.min.js integrity="sha256-hVVnYaiADRTO2PzUGmuLJr8BLUSjGIZsDYGmIJLv2b8=" crossorigin=anonymous></script><link rel=stylesheet href=https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css integrity=sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u crossorigin=anonymous><script src=https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js integrity=sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa crossorigin=anonymous></script><link rel=stylesheet href=https://use.fontawesome.com/releases/v5.7.2/css/all.css integrity=sha384-fnmOCqbTlWIlj8LyTjo7mOUStjsKC4pOpQbqyi7RrhN7udi9RwhKkMHpvLbHG9Sr crossorigin=anonymous><link rel=stylesheet href=https://mbuchel.github.io/css/nix.css><link rel="shortcut icon" href=/favicon.ico><link href="https://fonts.googleapis.com/css?family=Inconsolata%7COpen+Sans%7CConcert+One" rel=stylesheet><link rel=stylesheet href=https://cdn.jsdelivr.net/npm/katex@0.10.2/dist/katex.min.css integrity=sha384-yFRtMMDnQtDRO8rLpMIKrtPCD5jdktao2TV19YiZYWMDkUR5GQZR/NOVTdquEx1j crossorigin=anonymous><script defer src=https://cdn.jsdelivr.net/npm/katex@0.10.2/dist/katex.min.js integrity=sha384-9Nhn55MVVN0/4OFx7EE5kpFBPsEMZxKTCnA+4fqDmg12eCTqGi6+BB2LjY8brQxJ crossorigin=anonymous></script><script defer src=https://cdn.jsdelivr.net/npm/katex@0.10.2/dist/contrib/auto-render.min.js integrity=sha384-kWPLUVMOks5AQFrykwIup5lo0m3iMkkHrD0uJ4H5cjeGihAutqP0yW0J6dpFiVkI crossorigin=anonymous onload=renderMathInElement(document.body);></script></head><body><header><nav class="navbar navbar-default navbar-fixed-top navbar-inverse font-header"><div class=container-fluid><div class=navbar-header><button type=button class="navbar-toggle collapsed" data-toggle=collapse data-target=#navbar-collapse-1 aria-expanded=false>
+<span class=sr-only>Toggle navigation</span>
+<span class=icon-bar></span><span class=icon-bar></span><span class=icon-bar></span></button>
+<a class=navbar-brand id=green-terminal href=https://mbuchel.github.io/>mbuchel@mim-tech ~ $</a></div><div class="collapse navbar-collapse" id=navbar-collapse-1><ul class="nav navbar-nav navbar-right"><li><a href=https://mbuchel.github.io/>/home/mbuchel</a><li class=dropdown><a href=/mim>~/mim-tech</a><li class=dropdown><a href=/work>~/work</a><li class=dropdown><a href=/knowledge>~/knowledge</a></ul></div></div></nav></header><div class="container wrapper"><h1><a href=https://mbuchel.github.io/knowledge/communications-protocols/>Communications Protocols</a></h1><span class=post-date>Aug 10, 2019</span><div class=post-content><p><img src=/networking.jpg alt="Communication Base Image"><h1 id=background-knowledge>Background Knowledge:</h1><p>All connected devices require a communication protocol of one kind
+or another in order to inform the other device of what task it should
+perform next. Or as to the result of the task the device has performed.
+Now there are plenty of hardware based approaches I have worked on,
+and several more software based ones. Due to the vast magnitude I will
+just briefly touch upon some of them, feel free to contact me if you
+want a more indepth explanation of how the different protocols work.<h1 id=quick-run>Quick Run:</h1><p>To simplify your research I have seperated the communication protocols
+that I worked with based on the underlying hardware.<h2 id=analog-wires>Analog Wires:</h2><p>This field encompasses all the analog wire protocols.<h3 id=sent-protocol>SENT Protocol:</h3><p>The SENT protocol is the simplest protocol that I know off which uses
+analog wires, with a digital output. Below is a sample of some of the
+SENT output.<p><img src=/sent-example.jpg alt="SENT Example"><p>This is a protocol commonly used in high resolution sensors, for the
+simplicity in implementation. This uses 3 wires for communication, a
+power, ground, and signal wire. The signal alternates between high and
+low, and all transmissions are broken into nibbles (4 bits). There are
+8 nibbles in 1 SENT message. This is a one way asynchronous communication
+protocol.<h3 id=uart-protocol>UART Protocol:</h3><p>This is another protocol that gives a digital output. Unfortunately
+UART is very large with quite a few different modes. This is the most
+commonly used protocol, to the point I will only briefly touch on how
+it works. Below is the wiring diagram.<p><img src=/uart-example.jpg alt="UART Example"><p>Unfortunately they miss the power line connection, not necessary however
+I found it helps with debugging certain cases. Both devices can transmit
+and receive at the same time, as most devices have seperate UART buffers
+in hardware for sending and recieving. Packet structure for UART is as
+follows:<p><img src=/uart-packet.png alt="UART Packet"><p>There are also technically request to send, and clear to send lines, but
+these are rarely used for most applications.<p>It is common to use interrupts for UART, I talk more about interrupts and
+when to and when not to use them <a href=/knowledge/real-time>here</a>.<h3 id=usart-protocol>USART Protocol:</h3><p>While UART works for a lot of basic applications, the issue stands when
+the 2 devices have differing clocks. One way of fixing this is using a
+synchronization clock, USART handles this by having the transmitting device
+set the clock speed for the recieving. Making it receive on each rising edge.<p><img src=/usart-example.jpg alt="USART Example"><p>Now you can run USART without the synchronization clock, making it UART.<h3 id=i2c-protocol>I2C Protocol:</h3><p>This is another master-slave protocol, main annoyance with this one is
+getting data from the slave. Below is an example of the wiring:<p><img src=/i2c.png alt="I2C Example"><p>Now to make sense of this we should also look at an example packet sent:<p><img src=/i2c-packet.png alt="I2C Packet Example"><p>Now the basis of how I2C works is, there is a clock which is turned on
+when you attempt to write/read from an address. You start by sending the
+address as well as the command and reading from it. With PIC MCUs there
+were issues reading from I2C, so the solution was to keep transmitting
+0 values while the slave was trying to communicate back. In most cases
+however I2C is a protocol that is incredibly annoying to work with and
+you end up having to create a form of SPI protocol in order to properly
+select the slaves you want.<h3 id=spi-protocol>SPI Protocol:</h3><p>This is another master-slave protocol, and from my experience is a better
+fit than I2C for most applications, even though it requires more wires.
+SPI requires only 4 wires, a wiring diagram is shown below:<p><img src=/spi.png alt="SPI Example"><p>Since the packet structure is open to interpretation on SPI, I will instead
+provide some code for transmitting and receiving a byte on SPI.<div class=highlight><pre style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-c data-lang=c><span style=color:#75715e>/*
+</span><span style=color:#75715e> * Simultaneously transmit and receive a byte on the SPI.
+</span><span style=color:#75715e> *
+</span><span style=color:#75715e> * Polarity and phase are assumed to be both 0, i.e.:
+</span><span style=color:#75715e> *   - input data is captured on rising edge of SCLK.
+</span><span style=color:#75715e> *   - output data is propagated on falling edge of SCLK.
+</span><span style=color:#75715e> *
+</span><span style=color:#75715e> * Returns the received byte.
+</span><span style=color:#75715e> */</span>
+uint8_t <span style=color:#a6e22e>SPI_transfer_byte</span>(uint8_t byte_out)
+{
+    uint8_t byte_in <span style=color:#f92672>=</span> <span style=color:#ae81ff>0</span>;
+    uint8_t bit;
+
+    <span style=color:#66d9ef>for</span> (bit <span style=color:#f92672>=</span> <span style=color:#ae81ff>0x80</span>; bit; bit <span style=color:#f92672>&gt;&gt;=</span> <span style=color:#ae81ff>1</span>) {
+        <span style=color:#75715e>/* Shift-out a bit to the MOSI line */</span>
+        write_MOSI((byte_out <span style=color:#f92672>&amp;</span> bit) <span style=color:#f92672>?</span> HIGH : LOW);
+
+        <span style=color:#75715e>/* Delay for at least the peer&#39;s setup time */</span>
+        delay(SPI_SCLK_LOW_TIME);
+
+        <span style=color:#75715e>/* Pull the clock line high */</span>
+        write_SCLK(HIGH);
+
+        <span style=color:#75715e>/* Shift-in a bit from the MISO line */</span>
+        <span style=color:#66d9ef>if</span> (read_MISO() <span style=color:#f92672>==</span> HIGH)
+            byte_in <span style=color:#f92672>|=</span> bit;
+
+        <span style=color:#75715e>/* Delay for at least the peer&#39;s hold time */</span>
+        delay(SPI_SCLK_HIGH_TIME);
+
+        <span style=color:#75715e>/* Pull the clock line low */</span>
+        write_SCLK(LOW);
+    }
+
+    <span style=color:#66d9ef>return</span> byte_in;
+}</code></pre></div><p>This is transmission using bit-banging instead of dedicated
+hardware for the transmission.<h3 id=rs-family-protocol>RS Family Protocol:</h3><p>There are 3 main protocols in this family namely RS232, RS422, and RS485.<p>These are all found on old computers as serial ports, they are currently
+being replaced by USB and other protocols, in the meantime howevere there
+are still quite a lot of old electronics that still use these ports. The
+protocols themselves are fairly self explanatory. So here are wiring diagrams
+for the protocols. The order is RS232, RS422, RS485:<p><img src=/rs232.gif alt="RS232 Wiring"><p><img src=/rs422.gif alt="RS422 Wiring"><p><img src=/rs485.gif alt="RS485 Wiring"><h3 id=can-protocol>CAN Protocol:</h3><p>CAN is the king of automotive communications, most automotive companies
+use CAN. The reason for this is primarily due to the fact that there are
+very nice debugging tools for the CAN protocol, and it allows for error
+checking built in. This is a differencial line protocol, which means there
+is no ground/voltage but rather the difference between 2 voltages is
+measured.<p>Below is a sample CAN Packet:<p><img src=/can-packet.png alt="CAN Packet"><p>Now below is some code from one of the projects I worked on, this is
+for accessing the CAN bus on Linux (Jetson TX2).<div class=highlight><pre style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-cpp data-lang=cpp><span style=color:#75715e>/*
+</span><span style=color:#75715e> * Author: Michael Buchel
+</span><span style=color:#75715e> */</span>
+<span style=color:#75715e>#include</span> <span style=color:#75715e>&lt;stdio.h&gt;</span><span style=color:#75715e>
+</span><span style=color:#75715e>#include</span> <span style=color:#75715e>&lt;stdlib.h&gt;</span><span style=color:#75715e>
+</span><span style=color:#75715e>#include</span> <span style=color:#75715e>&lt;errno.h&gt;</span><span style=color:#75715e>
+</span><span style=color:#75715e>#include</span> <span style=color:#75715e>&lt;unistd.h&gt;</span><span style=color:#75715e>
+</span><span style=color:#75715e>#include</span> <span style=color:#75715e>&lt;string.h&gt;</span><span style=color:#75715e>
+</span><span style=color:#75715e>#include</span> <span style=color:#75715e>&lt;net/if.h&gt;</span><span style=color:#75715e>
+</span><span style=color:#75715e>#include</span> <span style=color:#75715e>&lt;sys/types.h&gt;</span><span style=color:#75715e>
+</span><span style=color:#75715e>#include</span> <span style=color:#75715e>&lt;sys/socket.h&gt;</span><span style=color:#75715e>
+</span><span style=color:#75715e>#include</span> <span style=color:#75715e>&lt;sys/ioctl.h&gt;</span><span style=color:#75715e>
+</span><span style=color:#75715e></span>
+<span style=color:#75715e>#include</span> <span style=color:#75715e>&lt;linux/can.h&gt;</span><span style=color:#75715e>
+</span><span style=color:#75715e>#include</span> <span style=color:#75715e>&lt;linux/can/raw.h&gt;</span><span style=color:#75715e>
+</span><span style=color:#75715e>#include</span> <span style=color:#75715e>&lt;logging.h&gt;</span><span style=color:#75715e>
+</span><span style=color:#75715e></span>
+<span style=color:#75715e>#include</span> <span style=color:#75715e>&lt;can.h&gt;</span><span style=color:#75715e>
+</span><span style=color:#75715e></span>
+<span style=color:#75715e>/*
+</span><span style=color:#75715e> * start - starts a can device using the device name
+</span><span style=color:#75715e> * @str - name of the device
+</span><span style=color:#75715e> */</span>
+<span style=color:#66d9ef>void</span> CAN<span style=color:#f92672>::</span>start(<span style=color:#66d9ef>const</span> <span style=color:#66d9ef>char</span> <span style=color:#f92672>*</span>str)
+{
+	<span style=color:#66d9ef>struct</span> sockaddr_can addr;
+	<span style=color:#66d9ef>struct</span> ifreq ifr;
+	
+	fd <span style=color:#f92672>=</span> socket(PF_CAN, SOCK_RAW, CAN_RAW);
+	
+	<span style=color:#66d9ef>if</span> (fd <span style=color:#f92672>&lt;</span> <span style=color:#ae81ff>0</span>) {
+		LOG_ERROR(<span style=color:#e6db74>&#34;Could not open socket, error: %s&#34;</span>, strerror(errno));
+		exit(<span style=color:#ae81ff>1</span>);
+	}
+	
+	strcpy(ifr.ifr_name, str);
+	ioctl(fd, SIOCGIFINDEX, <span style=color:#f92672>&amp;</span>ifr);
+	
+	addr.can_family <span style=color:#f92672>=</span> AF_CAN;
+	addr.can_ifindex <span style=color:#f92672>=</span> ifr.ifr_ifindex;
+
+	LOG_INFO(<span style=color:#e6db74>&#34;%s at index %d&#34;</span>, str, ifr.ifr_ifindex);
+	
+	<span style=color:#66d9ef>if</span> (bind(fd, (<span style=color:#66d9ef>struct</span> sockaddr<span style=color:#f92672>*</span>) <span style=color:#f92672>&amp;</span>addr, <span style=color:#66d9ef>sizeof</span>(addr)) <span style=color:#f92672>&lt;</span> <span style=color:#ae81ff>0</span>) {
+		LOG_ERROR(<span style=color:#e6db74>&#34;Could not bind, error: %s&#34;</span>, strerror(errno));
+		exit(<span style=color:#ae81ff>1</span>);
+	}
+}
+
+<span style=color:#75715e>/*
+</span><span style=color:#75715e> * send_can_msg - sends a can message
+</span><span style=color:#75715e> * @frame - frame to send
+</span><span style=color:#75715e> */</span>
+<span style=color:#66d9ef>int</span> CAN<span style=color:#f92672>::</span>send_can_msg(<span style=color:#66d9ef>const</span> <span style=color:#66d9ef>struct</span> can_frame <span style=color:#f92672>&amp;</span>frame)
+{
+	<span style=color:#66d9ef>return</span> write(fd, <span style=color:#f92672>&amp;</span>frame, <span style=color:#66d9ef>sizeof</span>(<span style=color:#66d9ef>struct</span> can_frame));
+}
+
+<span style=color:#75715e>/*
+</span><span style=color:#75715e> * recv_can_msg - recieves a can message
+</span><span style=color:#75715e> */</span>
+<span style=color:#66d9ef>int</span> CAN<span style=color:#f92672>::</span>recv_can_msg()
+{
+	memset(<span style=color:#f92672>&amp;</span>recv_can_buff, <span style=color:#ae81ff>0</span>, <span style=color:#66d9ef>sizeof</span>(<span style=color:#66d9ef>struct</span> can_frame));
+	<span style=color:#66d9ef>return</span> <span style=color:#a6e22e>read</span>(fd, <span style=color:#f92672>&amp;</span>recv_can_buff, <span style=color:#66d9ef>sizeof</span>(<span style=color:#66d9ef>struct</span> can_frame));
+}
+
+<span style=color:#75715e>/*
+</span><span style=color:#75715e> * release - kills the can device
+</span><span style=color:#75715e> */</span>
+<span style=color:#66d9ef>void</span> CAN<span style=color:#f92672>::</span>release()
+{
+	close(fd);
+}
+</code></pre></div><p>Getter function for reading the buffer in are defined in the header.<h3 id=usb2-0-usb3-0-sata-protocols>USB2.0/USB3.0/SATA Protocols:</h3><p>While I have used/coded all these protocols, they require a lot more
+indepth explanation. I may explain them in better detail in a different
+post.<h2 id=wireless>Wireless:</h2><p>Wireless communications is an ever expanding field, with quite a lot of
+different protocol and modulation methods. This section will definitely
+get expanded as I have more time.<h3 id=bluetooth-protocols>Bluetooth Protocols:</h3><p>Bluetooth is a wireless protocol that works in the 2.4 GHz band, with
+only a 30 meter radius. There are several forms of Bluetooth, such as
+LTE. However the purpose of this post will only be to discuss the higher
+level protocols built on top of bluetooth, specifically L2CAP and RFCOMM.<p><strong><em>NOTE: There are quite a few more protocols, the reader is encouraged to
+read more about them</em></strong><h4 id=l2cap>L2CAP:</h4><p>This is the bluetooth equivalent to UDP, which will be explained later on
+in Internet Protocols. This protocol uses datagrams, making it possible not
+to use a stream in order to communicate between devices. This allows for
+fast transmission and receiving. It is important to note that while this
+is close to UDP, it still allows for infinite retransmissions of lost
+packets. Here is the server code for a sample L2CAP program, the original
+code came from
+<a href=https://people.csail.mit.edu/albert/bluez-intro/x559.html>here</a>.<div class=highlight><pre style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-c data-lang=c><span style=color:#75715e>#include</span> <span style=color:#75715e>&lt;stdio.h&gt;</span><span style=color:#75715e>
+</span><span style=color:#75715e>#include</span> <span style=color:#75715e>&lt;string.h&gt;</span><span style=color:#75715e>
+</span><span style=color:#75715e>#include</span> <span style=color:#75715e>&lt;sys/socket.h&gt;</span><span style=color:#75715e>
+</span><span style=color:#75715e>#include</span> <span style=color:#75715e>&lt;bluetooth/bluetooth.h&gt;</span><span style=color:#75715e>
+</span><span style=color:#75715e>#include</span> <span style=color:#75715e>&lt;bluetooth/l2cap.h&gt;</span><span style=color:#75715e>
+</span><span style=color:#75715e></span>
+<span style=color:#66d9ef>int</span> <span style=color:#a6e22e>main</span>(<span style=color:#66d9ef>int</span> argc, <span style=color:#66d9ef>char</span> <span style=color:#f92672>**</span>argv)
+{
+    <span style=color:#66d9ef>struct</span> sockaddr_l2 loc_addr <span style=color:#f92672>=</span> { <span style=color:#ae81ff>0</span> }, rem_addr <span style=color:#f92672>=</span> { <span style=color:#ae81ff>0</span> };
+    <span style=color:#66d9ef>char</span> buf[<span style=color:#ae81ff>1024</span>] <span style=color:#f92672>=</span> { <span style=color:#ae81ff>0</span> };
+    <span style=color:#66d9ef>int</span> s, client, bytes_read;
+    socklen_t opt <span style=color:#f92672>=</span> <span style=color:#66d9ef>sizeof</span>(rem_addr);
+
+    <span style=color:#75715e>// allocate socket
+</span><span style=color:#75715e></span>    s <span style=color:#f92672>=</span> socket(AF_BLUETOOTH, SOCK_SEQPACKET, BTPROTO_L2CAP);
+
+    <span style=color:#75715e>// bind socket to port 0x1001 of the first available 
+</span><span style=color:#75715e></span>    <span style=color:#75715e>// bluetooth adapter
+</span><span style=color:#75715e></span>    loc_addr.l2_family <span style=color:#f92672>=</span> AF_BLUETOOTH;
+    loc_addr.l2_bdaddr <span style=color:#f92672>=</span> <span style=color:#f92672>*</span>BDADDR_ANY;
+    loc_addr.l2_psm <span style=color:#f92672>=</span> htobs(<span style=color:#ae81ff>0x1001</span>);
+
+    bind(s, (<span style=color:#66d9ef>struct</span> sockaddr <span style=color:#f92672>*</span>)<span style=color:#f92672>&amp;</span>loc_addr, <span style=color:#66d9ef>sizeof</span>(loc_addr));
+
+    <span style=color:#75715e>// put socket into listening mode
+</span><span style=color:#75715e></span>    listen(s, <span style=color:#ae81ff>1</span>);
+
+    <span style=color:#75715e>// accept one connection
+</span><span style=color:#75715e></span>    client <span style=color:#f92672>=</span> accept(s, (<span style=color:#66d9ef>struct</span> sockaddr <span style=color:#f92672>*</span>)<span style=color:#f92672>&amp;</span>rem_addr, <span style=color:#f92672>&amp;</span>opt);
+
+    ba2str( <span style=color:#f92672>&amp;</span>rem_addr.l2_bdaddr, buf );
+    fprintf(stderr, <span style=color:#e6db74>&#34;accepted connection from %s</span><span style=color:#ae81ff>\n</span><span style=color:#e6db74>&#34;</span>, buf);
+
+    memset(buf, <span style=color:#ae81ff>0</span>, <span style=color:#66d9ef>sizeof</span>(buf));
+
+    <span style=color:#75715e>// read data from the client
+</span><span style=color:#75715e></span>    bytes_read <span style=color:#f92672>=</span> read(client, buf, <span style=color:#66d9ef>sizeof</span>(buf));
+    <span style=color:#66d9ef>if</span>( bytes_read <span style=color:#f92672>&gt;</span> <span style=color:#ae81ff>0</span> ) {
+        printf(<span style=color:#e6db74>&#34;received [%s]</span><span style=color:#ae81ff>\n</span><span style=color:#e6db74>&#34;</span>, buf);
+    }
+
+    <span style=color:#75715e>// close connection
+</span><span style=color:#75715e></span>    close(client);
+    close(s);
+}</code></pre></div><p>And here is client code:<div class=highlight><pre style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-c data-lang=c><span style=color:#75715e>#include</span> <span style=color:#75715e>&lt;stdio.h&gt;</span><span style=color:#75715e>
+</span><span style=color:#75715e>#include</span> <span style=color:#75715e>&lt;string.h&gt;</span><span style=color:#75715e>
+</span><span style=color:#75715e>#include</span> <span style=color:#75715e>&lt;sys/socket.h&gt;</span><span style=color:#75715e>
+</span><span style=color:#75715e>#include</span> <span style=color:#75715e>&lt;bluetooth/bluetooth.h&gt;</span><span style=color:#75715e>
+</span><span style=color:#75715e>#include</span> <span style=color:#75715e>&lt;bluetooth/l2cap.h&gt;</span><span style=color:#75715e>
+</span><span style=color:#75715e></span>
+<span style=color:#66d9ef>int</span> <span style=color:#a6e22e>main</span>(<span style=color:#66d9ef>int</span> argc, <span style=color:#66d9ef>char</span> <span style=color:#f92672>**</span>argv)
+{
+    <span style=color:#66d9ef>struct</span> sockaddr_l2 addr <span style=color:#f92672>=</span> { <span style=color:#ae81ff>0</span> };
+    <span style=color:#66d9ef>int</span> s, status;
+    <span style=color:#66d9ef>char</span> <span style=color:#f92672>*</span>message <span style=color:#f92672>=</span> <span style=color:#e6db74>&#34;hello!&#34;</span>;
+    <span style=color:#66d9ef>char</span> dest[<span style=color:#ae81ff>18</span>] <span style=color:#f92672>=</span> <span style=color:#e6db74>&#34;01:23:45:67:89:AB&#34;</span>;
+
+    <span style=color:#66d9ef>if</span>(argc <span style=color:#f92672>&lt;</span> <span style=color:#ae81ff>2</span>)
+    {
+        fprintf(stderr, <span style=color:#e6db74>&#34;usage: %s &lt;bt_addr&gt;</span><span style=color:#ae81ff>\n</span><span style=color:#e6db74>&#34;</span>, argv[<span style=color:#ae81ff>0</span>]);
+        exit(<span style=color:#ae81ff>2</span>);
+    }
+
+    strncpy(dest, argv[<span style=color:#ae81ff>1</span>], <span style=color:#ae81ff>18</span>);
+
+    <span style=color:#75715e>// allocate a socket
+</span><span style=color:#75715e></span>    s <span style=color:#f92672>=</span> socket(AF_BLUETOOTH, SOCK_SEQPACKET, BTPROTO_L2CAP);
+
+    <span style=color:#75715e>// set the connection parameters (who to connect to)
+</span><span style=color:#75715e></span>    addr.l2_family <span style=color:#f92672>=</span> AF_BLUETOOTH;
+    addr.l2_psm <span style=color:#f92672>=</span> htobs(<span style=color:#ae81ff>0x1001</span>);
+    str2ba( dest, <span style=color:#f92672>&amp;</span>addr.l2_bdaddr );
+
+    <span style=color:#75715e>// connect to server
+</span><span style=color:#75715e></span>    status <span style=color:#f92672>=</span> connect(s, (<span style=color:#66d9ef>struct</span> sockaddr <span style=color:#f92672>*</span>)<span style=color:#f92672>&amp;</span>addr, <span style=color:#66d9ef>sizeof</span>(addr));
+
+    <span style=color:#75715e>// send a message
+</span><span style=color:#75715e></span>    <span style=color:#66d9ef>if</span>( status <span style=color:#f92672>==</span> <span style=color:#ae81ff>0</span> ) {
+        status <span style=color:#f92672>=</span> write(s, <span style=color:#e6db74>&#34;hello!&#34;</span>, <span style=color:#ae81ff>6</span>);
+    }
+
+    <span style=color:#66d9ef>if</span>( status <span style=color:#f92672>&lt;</span> <span style=color:#ae81ff>0</span> ) perror(<span style=color:#e6db74>&#34;uh oh&#34;</span>);
+
+    close(s);
+}</code></pre></div><h4 id=rfcomm>RFCOMM:</h4><p>This is equivalent to TCP in terms of Internet. However this can act
+as a stream or datagram, which TCP can only act as a stream based socket.
+Below is sample server code taken from
+<a href=https://people.csail.mit.edu/albert/bluez-intro/x502.html>here</a>.<div class=highlight><pre style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-c data-lang=c><span style=color:#75715e>#include</span> <span style=color:#75715e>&lt;stdio.h&gt;</span><span style=color:#75715e>
+</span><span style=color:#75715e>#include</span> <span style=color:#75715e>&lt;unistd.h&gt;</span><span style=color:#75715e>
+</span><span style=color:#75715e>#include</span> <span style=color:#75715e>&lt;sys/socket.h&gt;</span><span style=color:#75715e>
+</span><span style=color:#75715e>#include</span> <span style=color:#75715e>&lt;bluetooth/bluetooth.h&gt;</span><span style=color:#75715e>
+</span><span style=color:#75715e>#include</span> <span style=color:#75715e>&lt;bluetooth/rfcomm.h&gt;</span><span style=color:#75715e>
+</span><span style=color:#75715e></span>
+<span style=color:#66d9ef>int</span> <span style=color:#a6e22e>main</span>(<span style=color:#66d9ef>int</span> argc, <span style=color:#66d9ef>char</span> <span style=color:#f92672>**</span>argv)
+{
+    <span style=color:#66d9ef>struct</span> sockaddr_rc loc_addr <span style=color:#f92672>=</span> { <span style=color:#ae81ff>0</span> }, rem_addr <span style=color:#f92672>=</span> { <span style=color:#ae81ff>0</span> };
+    <span style=color:#66d9ef>char</span> buf[<span style=color:#ae81ff>1024</span>] <span style=color:#f92672>=</span> { <span style=color:#ae81ff>0</span> };
+    <span style=color:#66d9ef>int</span> s, client, bytes_read;
+    socklen_t opt <span style=color:#f92672>=</span> <span style=color:#66d9ef>sizeof</span>(rem_addr);
+
+    <span style=color:#75715e>// allocate socket
+</span><span style=color:#75715e></span>    s <span style=color:#f92672>=</span> socket(AF_BLUETOOTH, SOCK_STREAM, BTPROTO_RFCOMM);
+
+    <span style=color:#75715e>// bind socket to port 1 of the first available 
+</span><span style=color:#75715e></span>    <span style=color:#75715e>// local bluetooth adapter
+</span><span style=color:#75715e></span>    loc_addr.rc_family <span style=color:#f92672>=</span> AF_BLUETOOTH;
+    loc_addr.rc_bdaddr <span style=color:#f92672>=</span> <span style=color:#f92672>*</span>BDADDR_ANY;
+    loc_addr.rc_channel <span style=color:#f92672>=</span> (uint8_t) <span style=color:#ae81ff>1</span>;
+    bind(s, (<span style=color:#66d9ef>struct</span> sockaddr <span style=color:#f92672>*</span>)<span style=color:#f92672>&amp;</span>loc_addr, <span style=color:#66d9ef>sizeof</span>(loc_addr));
+
+    <span style=color:#75715e>// put socket into listening mode
+</span><span style=color:#75715e></span>    listen(s, <span style=color:#ae81ff>1</span>);
+
+    <span style=color:#75715e>// accept one connection
+</span><span style=color:#75715e></span>    client <span style=color:#f92672>=</span> accept(s, (<span style=color:#66d9ef>struct</span> sockaddr <span style=color:#f92672>*</span>)<span style=color:#f92672>&amp;</span>rem_addr, <span style=color:#f92672>&amp;</span>opt);
+
+    ba2str( <span style=color:#f92672>&amp;</span>rem_addr.rc_bdaddr, buf );
+    fprintf(stderr, <span style=color:#e6db74>&#34;accepted connection from %s</span><span style=color:#ae81ff>\n</span><span style=color:#e6db74>&#34;</span>, buf);
+    memset(buf, <span style=color:#ae81ff>0</span>, <span style=color:#66d9ef>sizeof</span>(buf));
+
+    <span style=color:#75715e>// read data from the client
+</span><span style=color:#75715e></span>    bytes_read <span style=color:#f92672>=</span> read(client, buf, <span style=color:#66d9ef>sizeof</span>(buf));
+    <span style=color:#66d9ef>if</span>( bytes_read <span style=color:#f92672>&gt;</span> <span style=color:#ae81ff>0</span> ) {
+        printf(<span style=color:#e6db74>&#34;received [%s]</span><span style=color:#ae81ff>\n</span><span style=color:#e6db74>&#34;</span>, buf);
+    }
+
+    <span style=color:#75715e>// close connection
+</span><span style=color:#75715e></span>    close(client);
+    close(s);
+    <span style=color:#66d9ef>return</span> <span style=color:#ae81ff>0</span>;
+}</code></pre></div><p>Here is the client code:<div class=highlight><pre style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-c data-lang=c><span style=color:#75715e>#include</span> <span style=color:#75715e>&lt;stdio.h&gt;</span><span style=color:#75715e>
+</span><span style=color:#75715e>#include</span> <span style=color:#75715e>&lt;unistd.h&gt;</span><span style=color:#75715e>
+</span><span style=color:#75715e>#include</span> <span style=color:#75715e>&lt;sys/socket.h&gt;</span><span style=color:#75715e>
+</span><span style=color:#75715e>#include</span> <span style=color:#75715e>&lt;bluetooth/bluetooth.h&gt;</span><span style=color:#75715e>
+</span><span style=color:#75715e>#include</span> <span style=color:#75715e>&lt;bluetooth/rfcomm.h&gt;</span><span style=color:#75715e>
+</span><span style=color:#75715e></span>
+<span style=color:#66d9ef>int</span> <span style=color:#a6e22e>main</span>(<span style=color:#66d9ef>int</span> argc, <span style=color:#66d9ef>char</span> <span style=color:#f92672>**</span>argv)
+{
+    <span style=color:#66d9ef>struct</span> sockaddr_rc addr <span style=color:#f92672>=</span> { <span style=color:#ae81ff>0</span> };
+    <span style=color:#66d9ef>int</span> s, status;
+    <span style=color:#66d9ef>char</span> dest[<span style=color:#ae81ff>18</span>] <span style=color:#f92672>=</span> <span style=color:#e6db74>&#34;01:23:45:67:89:AB&#34;</span>;
+
+    <span style=color:#75715e>// allocate a socket
+</span><span style=color:#75715e></span>    s <span style=color:#f92672>=</span> socket(AF_BLUETOOTH, SOCK_STREAM, BTPROTO_RFCOMM);
+
+    <span style=color:#75715e>// set the connection parameters (who to connect to)
+</span><span style=color:#75715e></span>    addr.rc_family <span style=color:#f92672>=</span> AF_BLUETOOTH;
+    addr.rc_channel <span style=color:#f92672>=</span> (uint8_t) <span style=color:#ae81ff>1</span>;
+    str2ba( dest, <span style=color:#f92672>&amp;</span>addr.rc_bdaddr );
+
+    <span style=color:#75715e>// connect to server
+</span><span style=color:#75715e></span>    status <span style=color:#f92672>=</span> connect(s, (<span style=color:#66d9ef>struct</span> sockaddr <span style=color:#f92672>*</span>)<span style=color:#f92672>&amp;</span>addr, <span style=color:#66d9ef>sizeof</span>(addr));
+
+    <span style=color:#75715e>// send a message
+</span><span style=color:#75715e></span>    <span style=color:#66d9ef>if</span>( status <span style=color:#f92672>==</span> <span style=color:#ae81ff>0</span> ) {
+        status <span style=color:#f92672>=</span> write(s, <span style=color:#e6db74>&#34;hello!&#34;</span>, <span style=color:#ae81ff>6</span>);
+    }
+
+    <span style=color:#66d9ef>if</span>( status <span style=color:#f92672>&lt;</span> <span style=color:#ae81ff>0</span> ) perror(<span style=color:#e6db74>&#34;uh oh&#34;</span>);
+
+    close(s);
+    <span style=color:#66d9ef>return</span> <span style=color:#ae81ff>0</span>;
+}</code></pre></div><h3 id=internet-protocols>Internet Protocols:</h3><p>There are several protocols for internet, the most predominant
+ones include UDP and TCP. Named Data Networking is an interesting
+one, however still incredibly far to go before it can be fundamentally
+used by the general public. IPFS is another protocol currently being
+developed for a decentralized internet, unfortunately still very
+far to go.<h4 id=udp>UDP:</h4><p>A very simple protocol where it is designed to be fast, but not necessarily
+reliable. There is no retransmissions for missed packets and there is no
+checks for dropped packets. The upside is it is incredibly easy to code up.<h4 id=tcp>TCP:</h4><p>This is a fairly complex protocol which was designed to be reliable, as
+a result it has a lot of slowdowns. These are handled with congestion
+control techniques. They however still do not fix all possible slowdowns.<h3 id=modulation-for-wireless>Modulation for Wireless:</h3><p>I will add more here when I have more time to work on this.<h1 id=most-important-tidbits>Most Important Tidbits:</h1><ul><li>Make a text based communication protocol first<li>Huffman encoding is a very good choice to lower the complexity of your commands<li>CAN also has a wireless networking interface<li>There are plenty of libraries which build protocols on top of CAN<li>PLCs have an interesting way of handling wireless communications</ul></div><div class=post-comments></div><div class=push></div></div><footer class="footer text-center"><p>Copyright &copy; 2019 Michael Buchel -
+<span class=credit>Powered by
+<a target=_blank href=https://gohugo.io>Hugo</a>
+and
+<a target=_blank href=https://github.com/LordMathis/hugo-theme-nix/>Nix</a> theme.</span></footer></body>

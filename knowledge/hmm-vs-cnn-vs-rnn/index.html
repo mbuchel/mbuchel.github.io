@@ -1,0 +1,32 @@
+<!doctype html><html><head><title>HMM vs CNN vs RNN &middot; Michael Buchel</title><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1,maximum-scale=1"><script src=https://code.jquery.com/jquery-3.1.1.min.js integrity="sha256-hVVnYaiADRTO2PzUGmuLJr8BLUSjGIZsDYGmIJLv2b8=" crossorigin=anonymous></script><link rel=stylesheet href=https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css integrity=sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u crossorigin=anonymous><script src=https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js integrity=sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa crossorigin=anonymous></script><link rel=stylesheet href=https://use.fontawesome.com/releases/v5.7.2/css/all.css integrity=sha384-fnmOCqbTlWIlj8LyTjo7mOUStjsKC4pOpQbqyi7RrhN7udi9RwhKkMHpvLbHG9Sr crossorigin=anonymous><link rel=stylesheet href=https://mbuchel.github.io/css/nix.css><link rel="shortcut icon" href=/favicon.ico><link href="https://fonts.googleapis.com/css?family=Inconsolata%7COpen+Sans%7CConcert+One" rel=stylesheet><link rel=stylesheet href=https://cdn.jsdelivr.net/npm/katex@0.10.2/dist/katex.min.css integrity=sha384-yFRtMMDnQtDRO8rLpMIKrtPCD5jdktao2TV19YiZYWMDkUR5GQZR/NOVTdquEx1j crossorigin=anonymous><script defer src=https://cdn.jsdelivr.net/npm/katex@0.10.2/dist/katex.min.js integrity=sha384-9Nhn55MVVN0/4OFx7EE5kpFBPsEMZxKTCnA+4fqDmg12eCTqGi6+BB2LjY8brQxJ crossorigin=anonymous></script><script defer src=https://cdn.jsdelivr.net/npm/katex@0.10.2/dist/contrib/auto-render.min.js integrity=sha384-kWPLUVMOks5AQFrykwIup5lo0m3iMkkHrD0uJ4H5cjeGihAutqP0yW0J6dpFiVkI crossorigin=anonymous onload=renderMathInElement(document.body);></script></head><body><header><nav class="navbar navbar-default navbar-fixed-top navbar-inverse font-header"><div class=container-fluid><div class=navbar-header><button type=button class="navbar-toggle collapsed" data-toggle=collapse data-target=#navbar-collapse-1 aria-expanded=false>
+<span class=sr-only>Toggle navigation</span>
+<span class=icon-bar></span><span class=icon-bar></span><span class=icon-bar></span></button>
+<a class=navbar-brand id=green-terminal href=https://mbuchel.github.io/>mbuchel@mim-tech ~ $</a></div><div class="collapse navbar-collapse" id=navbar-collapse-1><ul class="nav navbar-nav navbar-right"><li><a href=https://mbuchel.github.io/>/home/mbuchel</a><li class=dropdown><a href=/mim>~/mim-tech</a><li class=dropdown><a href=/work>~/work</a><li class=dropdown><a href=/knowledge>~/knowledge</a></ul></div></div></nav></header><div class="container wrapper"><h1><a href=https://mbuchel.github.io/knowledge/hmm-vs-cnn-vs-rnn/>HMM vs CNN vs RNN</a></h1><span class=post-date>Aug 10, 2019</span><div class=post-content><p><img src=/machine-learning.jpg alt="Machine Learning"><h1 id=background-knowledge>Background Knowledge:</h1><p>Machine learning is another field which takes a larger portion of our lives.
+Unfortunately when talking with most individuals their knowledge of machine
+learning can be summed up quite quickly under the umbrella term neural
+network. They know nothing about different neural network topologies, and
+much less about concepts like Boosting which helps you train neural networks.
+They mostly worked with one or two frameworks such as tensorflow or caffe,
+and fewer still know about model fitting or superquadratics which work on
+identifying quite a lot of models. This is due to the fact that we attempt
+to reach a larger audience with machine learning, however this requires
+we cut down the background knowledge required to understand it.<h1 id=quick-run>Quick Run:</h1><p>There are different ways to fit unknown models to particular inputs and
+outputs. The goto among quite a lot of individuals is run it through a
+neural network, however this is typically a slow solution and takes quite
+a while to train. Specifically when it comes to things such as financial
+analysis. This post should help explain when and were to use these possible
+systems.<h2 id=hidden-markov-model>Hidden Markov Model:</h2><p><img src=/hmm.png alt="Hidden Markov Model"><p>This treats the system as a state machine with a hidden or unknown variable
+which has to be predicted. This is very good when we are trying to identify
+a series of data as a perticular field in a finite state of answers. However
+it is limited when we have a potentially infinite set of answers as it
+requires checking of every single possible individual in that area. It on
+the plus side very fast in training as well as identification.<h2 id=convolution-neural-networks>Convolution Neural Networks:</h2><p><img src=/cnn.png alt="Convolution Neural Network"><p>These are great at image classification, poor however for series data, unless
+the series is classified in a kernel and you treat it as a large image. The
+main issue is that it fails to have a proper feedback in the layers. These
+take quite a while to train unfortunately due to the complexity.<h2 id=recurrent-neural-networks>Recurrent Neural Networks:</h2><p><img src=/rnn.png alt="Recurrent Neural Network"><p>These are good for fairly stable systems, poor for volatile systems such as
+the stock market. They take a while to train and have a long term memory
+which comes from the feedback.<h1 id=most-important-tidbits>Most Important Tidbits:</h1><ul><li>Use HMM for solving problems with set answers<li>Use RNN for solving long term dependancy problems (something hundreds of measurements away affecting current measurement)<li>Use CNN for classification problems of large datasets<li>If the system is volatile try to use HMM, if stable try to use RNN</ul></div><div class=post-comments></div><div class=push></div></div><footer class="footer text-center"><p>Copyright &copy; 2019 Michael Buchel -
+<span class=credit>Powered by
+<a target=_blank href=https://gohugo.io>Hugo</a>
+and
+<a target=_blank href=https://github.com/LordMathis/hugo-theme-nix/>Nix</a> theme.</span></footer></body>

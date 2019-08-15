@@ -1,0 +1,38 @@
+<!doctype html><html><head><title>Motor Control &middot; Michael Buchel</title><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1,maximum-scale=1"><script src=https://code.jquery.com/jquery-3.1.1.min.js integrity="sha256-hVVnYaiADRTO2PzUGmuLJr8BLUSjGIZsDYGmIJLv2b8=" crossorigin=anonymous></script><link rel=stylesheet href=https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css integrity=sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u crossorigin=anonymous><script src=https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js integrity=sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa crossorigin=anonymous></script><link rel=stylesheet href=https://use.fontawesome.com/releases/v5.7.2/css/all.css integrity=sha384-fnmOCqbTlWIlj8LyTjo7mOUStjsKC4pOpQbqyi7RrhN7udi9RwhKkMHpvLbHG9Sr crossorigin=anonymous><link rel=stylesheet href=https://mbuchel.github.io/css/nix.css><link rel="shortcut icon" href=/favicon.ico><link href="https://fonts.googleapis.com/css?family=Inconsolata%7COpen+Sans%7CConcert+One" rel=stylesheet><link rel=stylesheet href=https://cdn.jsdelivr.net/npm/katex@0.10.2/dist/katex.min.css integrity=sha384-yFRtMMDnQtDRO8rLpMIKrtPCD5jdktao2TV19YiZYWMDkUR5GQZR/NOVTdquEx1j crossorigin=anonymous><script defer src=https://cdn.jsdelivr.net/npm/katex@0.10.2/dist/katex.min.js integrity=sha384-9Nhn55MVVN0/4OFx7EE5kpFBPsEMZxKTCnA+4fqDmg12eCTqGi6+BB2LjY8brQxJ crossorigin=anonymous></script><script defer src=https://cdn.jsdelivr.net/npm/katex@0.10.2/dist/contrib/auto-render.min.js integrity=sha384-kWPLUVMOks5AQFrykwIup5lo0m3iMkkHrD0uJ4H5cjeGihAutqP0yW0J6dpFiVkI crossorigin=anonymous onload=renderMathInElement(document.body);></script></head><body><header><nav class="navbar navbar-default navbar-fixed-top navbar-inverse font-header"><div class=container-fluid><div class=navbar-header><button type=button class="navbar-toggle collapsed" data-toggle=collapse data-target=#navbar-collapse-1 aria-expanded=false>
+<span class=sr-only>Toggle navigation</span>
+<span class=icon-bar></span><span class=icon-bar></span><span class=icon-bar></span></button>
+<a class=navbar-brand id=green-terminal href=https://mbuchel.github.io/>mbuchel@mim-tech ~ $</a></div><div class="collapse navbar-collapse" id=navbar-collapse-1><ul class="nav navbar-nav navbar-right"><li><a href=https://mbuchel.github.io/>/home/mbuchel</a><li class=dropdown><a href=/mim>~/mim-tech</a><li class=dropdown><a href=/work>~/work</a><li class=dropdown><a href=/knowledge>~/knowledge</a></ul></div></div></nav></header><div class="container wrapper"><h1><a href=https://mbuchel.github.io/knowledge/motor-control/>Motor Control</a></h1><span class=post-date>Aug 10, 2019</span><div class=post-content><p><img src=/bldc.webp alt="Motor Image"><h1 id=background-knowledge>Background Knowledge:</h1><p>The first half of the picture is called a 3 phase inverter
+circuit, while the second half is the actual motor. These
+type of setups are common in AC motor control, I will ignore
+DC control schemes for motors are they are for the most part
+straightforward and do not have different kinds of control
+schemes which is common in AC motor systems.<h1 id=quick-run>Quick Run:</h1><p>AC motors are playing a bigger role than ever in our ever
+increasingly automated world, due to the reduced cost and
+power consumption. As this is the case it is more than ever
+to know how AC motors are used. The first is vector control
+schemes, these are changing from a 3 variable system to a
+2 variable system using
+<a href=https://en.wikipedia.org/wiki/Alpha%E2%80%93beta_transformation>Clarke</a>
+and
+<a href=https://www.mathworks.com/help/physmod/sps/ref/parktransform.html>Park</a>
+Transforms. The Clarke transform is used to convert from a
+3 current system into a 2 coordinate system. Now we can use
+a Park transform to switch from 2 stationary system vectors
+into 2 rotating system vectors, this allows us to follow one
+of thes system vectors, which in turn allows us only to control
+1 instead of 2 components, making it simpler.<p>From here we can now go into different mathematical schemes
+for controlling motors, there are several ones that I have
+worked with. Primarily Space-Vector PWM
+(<a href=https://www.motioncontroltips.com/what-is-space-vector-pulse-width-modulation-svpwm/>SVPWM</a>)
+and Sine PWM (<a href=http://encon.fke.utm.my/nikd/SEM4413/spwm.pdf>SPWM</a>).<p>To help demonstrate the difference, the following comes from
+SVPWM, and is what we turn the vectors into:<p><img src=/SVPWM.png alt="SVPWM Image"><p>Now we switch over to SPWM and show the image of what we try
+to achieve:<p><img src=/spwm.png alt="SPWM Image"><p>In SVPWM we transform to vectors which we know the next value
+to use. While in SPWM we try to approximate a sine form with
+our outputs.<p>There are also techniques for controlling motors without sensors
+however this goes out of scope of a simple explanation quite
+quickly.<h1 id=most-important-tidbits>Most Important Tidbits:</h1><p>The following are important tidbits I found when researching
+this field.<ul><li>Basic principles of SVPWM<ul><li>Trajectory should be a circle<li>Only 1 switching per state transition<li>No more than 3 switches in 1 sample period<li>Final state of one sample must be initial state of next sample</ul><li>SVPWM has about 3% less harmonic content than SPWM (cleaner control)<li>In certain motors it is better to run using SPWM than SVPWM</ul></div><div class=post-comments></div><div class=push></div></div><footer class="footer text-center"><p>Copyright &copy; 2019 Michael Buchel -
+<span class=credit>Powered by
+<a target=_blank href=https://gohugo.io>Hugo</a>
+and
+<a target=_blank href=https://github.com/LordMathis/hugo-theme-nix/>Nix</a> theme.</span></footer></body>

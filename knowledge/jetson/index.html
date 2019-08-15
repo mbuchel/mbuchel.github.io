@@ -1,0 +1,33 @@
+<!doctype html><html><head><title>Jetson &middot; Michael Buchel</title><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1,maximum-scale=1"><script src=https://code.jquery.com/jquery-3.1.1.min.js integrity="sha256-hVVnYaiADRTO2PzUGmuLJr8BLUSjGIZsDYGmIJLv2b8=" crossorigin=anonymous></script><link rel=stylesheet href=https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css integrity=sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u crossorigin=anonymous><script src=https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js integrity=sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa crossorigin=anonymous></script><link rel=stylesheet href=https://use.fontawesome.com/releases/v5.7.2/css/all.css integrity=sha384-fnmOCqbTlWIlj8LyTjo7mOUStjsKC4pOpQbqyi7RrhN7udi9RwhKkMHpvLbHG9Sr crossorigin=anonymous><link rel=stylesheet href=https://mbuchel.github.io/css/nix.css><link rel="shortcut icon" href=/favicon.ico><link href="https://fonts.googleapis.com/css?family=Inconsolata%7COpen+Sans%7CConcert+One" rel=stylesheet><link rel=stylesheet href=https://cdn.jsdelivr.net/npm/katex@0.10.2/dist/katex.min.css integrity=sha384-yFRtMMDnQtDRO8rLpMIKrtPCD5jdktao2TV19YiZYWMDkUR5GQZR/NOVTdquEx1j crossorigin=anonymous><script defer src=https://cdn.jsdelivr.net/npm/katex@0.10.2/dist/katex.min.js integrity=sha384-9Nhn55MVVN0/4OFx7EE5kpFBPsEMZxKTCnA+4fqDmg12eCTqGi6+BB2LjY8brQxJ crossorigin=anonymous></script><script defer src=https://cdn.jsdelivr.net/npm/katex@0.10.2/dist/contrib/auto-render.min.js integrity=sha384-kWPLUVMOks5AQFrykwIup5lo0m3iMkkHrD0uJ4H5cjeGihAutqP0yW0J6dpFiVkI crossorigin=anonymous onload=renderMathInElement(document.body);></script></head><body><header><nav class="navbar navbar-default navbar-fixed-top navbar-inverse font-header"><div class=container-fluid><div class=navbar-header><button type=button class="navbar-toggle collapsed" data-toggle=collapse data-target=#navbar-collapse-1 aria-expanded=false>
+<span class=sr-only>Toggle navigation</span>
+<span class=icon-bar></span><span class=icon-bar></span><span class=icon-bar></span></button>
+<a class=navbar-brand id=green-terminal href=https://mbuchel.github.io/>mbuchel@mim-tech ~ $</a></div><div class="collapse navbar-collapse" id=navbar-collapse-1><ul class="nav navbar-nav navbar-right"><li><a href=https://mbuchel.github.io/>/home/mbuchel</a><li class=dropdown><a href=/mim>~/mim-tech</a><li class=dropdown><a href=/work>~/work</a><li class=dropdown><a href=/knowledge>~/knowledge</a></ul></div></div></nav></header><div class="container wrapper"><h1><a href=https://mbuchel.github.io/knowledge/jetson/>Jetson</a></h1><span class=post-date>Aug 10, 2019</span><div class=post-content><p><img src=/jetson-tx2.jpg alt="Jetson TX2"><h1 id=background-knowledge>Background Knowledge:</h1><p>The Jetson TX2 is a Nvidia embedded computer, which is an arm cortex
+CPU and a nvidia graphics card. This is the 3rd of the Jetson family
+with the newest addition being the Jetson Xavier. I had experience working
+with all previous Jetsons as well, and as with all things Nvidia + linux
+the task was not easy.<h1 id=quick-run>Quick Run:</h1><p>The main issue I had was the outdated OpenCV for Tegra, several computer
+vision techniques have been added in later OpenCV versions which just
+cannot show up in the OpenCV for Tegra. On top of this the OpenCV for
+Tegra is not as much of a speed up as is claimed by Nvidia, it is not
+worth the deprecated functions. Other flaws in the Nvidia Jetson is a
+very hard time changing the operating system, it is much harder than
+it should be.<p>Carrier boards for the Jetsons tend to have flaws such as only being able
+to use SATA or USB3.0. You have to play reverse engineer in order to be
+able to flash from none Ubuntu systems, when there is nothing in the flash
+software that really limits you to Ubuntu. On top of this there are quite
+a few bugs in OpenCV for Tegra and the flashing software. The CPU cannot
+be set into a permanent on mode so you require to set up a systemd command
+to turn the CPU on full power.<p>To prevent reflashing I created the following scripts in order to reflash
+the Jetson, this is for a more production ready product where all your code
+is finished and you just want to put the code on 1 time and go on.<div class=highlight><pre style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash><span style=color:#75715e>#!/bin/bash
+</span><span style=color:#75715e></span>
+FLASH_HOME<span style=color:#f92672>=</span><span style=color:#e6db74>&#34;flash home directory goes here&#34;</span>
+
+sudo ln -s $1 $FLASH_HOME/bootloader/system.img
+cd $FLASH_HOME
+sudo ./flash.sh -r -k APP jetson-tx2 mmcblk0p1</code></pre></div><p>I did not use a copy as the file is like 30 GBs, which takes a while to
+copy over. Remember to give yourself permission to use USB groups.<h1 id=most-important-tidbits>Most Important Tidbits:</h1><ul><li>Jetson is very buggy, and very easy to accidently fry</ul></div><div class=post-comments></div><div class=push></div></div><footer class="footer text-center"><p>Copyright &copy; 2019 Michael Buchel -
+<span class=credit>Powered by
+<a target=_blank href=https://gohugo.io>Hugo</a>
+and
+<a target=_blank href=https://github.com/LordMathis/hugo-theme-nix/>Nix</a> theme.</span></footer></body>

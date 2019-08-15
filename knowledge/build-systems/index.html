@@ -1,0 +1,109 @@
+<!doctype html><html><head><title>Build Systems &middot; Michael Buchel</title><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1,maximum-scale=1"><script src=https://code.jquery.com/jquery-3.1.1.min.js integrity="sha256-hVVnYaiADRTO2PzUGmuLJr8BLUSjGIZsDYGmIJLv2b8=" crossorigin=anonymous></script><link rel=stylesheet href=https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css integrity=sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u crossorigin=anonymous><script src=https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js integrity=sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa crossorigin=anonymous></script><link rel=stylesheet href=https://use.fontawesome.com/releases/v5.7.2/css/all.css integrity=sha384-fnmOCqbTlWIlj8LyTjo7mOUStjsKC4pOpQbqyi7RrhN7udi9RwhKkMHpvLbHG9Sr crossorigin=anonymous><link rel=stylesheet href=https://mbuchel.github.io/css/nix.css><link rel="shortcut icon" href=/favicon.ico><link href="https://fonts.googleapis.com/css?family=Inconsolata%7COpen+Sans%7CConcert+One" rel=stylesheet><link rel=stylesheet href=https://cdn.jsdelivr.net/npm/katex@0.10.2/dist/katex.min.css integrity=sha384-yFRtMMDnQtDRO8rLpMIKrtPCD5jdktao2TV19YiZYWMDkUR5GQZR/NOVTdquEx1j crossorigin=anonymous><script defer src=https://cdn.jsdelivr.net/npm/katex@0.10.2/dist/katex.min.js integrity=sha384-9Nhn55MVVN0/4OFx7EE5kpFBPsEMZxKTCnA+4fqDmg12eCTqGi6+BB2LjY8brQxJ crossorigin=anonymous></script><script defer src=https://cdn.jsdelivr.net/npm/katex@0.10.2/dist/contrib/auto-render.min.js integrity=sha384-kWPLUVMOks5AQFrykwIup5lo0m3iMkkHrD0uJ4H5cjeGihAutqP0yW0J6dpFiVkI crossorigin=anonymous onload=renderMathInElement(document.body);></script></head><body><header><nav class="navbar navbar-default navbar-fixed-top navbar-inverse font-header"><div class=container-fluid><div class=navbar-header><button type=button class="navbar-toggle collapsed" data-toggle=collapse data-target=#navbar-collapse-1 aria-expanded=false>
+<span class=sr-only>Toggle navigation</span>
+<span class=icon-bar></span><span class=icon-bar></span><span class=icon-bar></span></button>
+<a class=navbar-brand id=green-terminal href=https://mbuchel.github.io/>mbuchel@mim-tech ~ $</a></div><div class="collapse navbar-collapse" id=navbar-collapse-1><ul class="nav navbar-nav navbar-right"><li><a href=https://mbuchel.github.io/>/home/mbuchel</a><li class=dropdown><a href=/mim>~/mim-tech</a><li class=dropdown><a href=/work>~/work</a><li class=dropdown><a href=/knowledge>~/knowledge</a></ul></div></div></nav></header><div class="container wrapper"><h1><a href=https://mbuchel.github.io/knowledge/build-systems/>Build Systems</a></h1><span class=post-date>Aug 10, 2019</span><div class=post-content><p><img src=/build-systems.jpg alt="Build Systems Image"><h1 id=background-knowledge>Background Knowledge:</h1><p>Build systems are essential for a programmer to know, without it
+you will never be able to compile large scale programs. It is vital
+to know both the compiler you are using as well as the build system,
+as the program you make will be limited by both. Unfortunately there
+have not been many good tutorials on Makefiles, for that reason majority
+of this post will be on Makefiles. I will touch on different more
+modern build systems later on in the post.<h1 id=quick-run>Quick Run:</h1><p>The most important thing in picking your build system is the programming
+language you are using. Some build systems do not work well with certain
+programming languages. Luckily for us Makefiles work well with every single
+programming language.<h2 id=makefiles>Makefiles:</h2><p>If you look inside Makefiles you will see quite a lot of different styles.
+Some like the example above will manually add all the files as rules, this
+should be avoided as much as possible, due to the ever growing complexity
+in software projects. Manually adding hundreds to possibly thousands of new
+files is simply infeasible. The correct way to add files is a wildcarding
+fashion. Below is some code demonstrating how to use wildcards, this finds
+all asm, C, and C++ files in a source directory, and transforms them into
+object files.<div class=highlight><pre style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-makefile data-lang=makefile>SRC <span style=color:#f92672>:=</span> <span style=color:#66d9ef>$(</span>wildcard <span style=color:#66d9ef>$(</span>SRC_DIR<span style=color:#66d9ef>)</span>/*.<span style=color:#f92672>[</span>S|c|cpp<span style=color:#f92672>]</span><span style=color:#66d9ef>)</span>
+
+OBJ <span style=color:#f92672>:=</span> <span style=color:#66d9ef>$(</span>SRC:src/%<span style=color:#f92672>=</span><span style=color:#66d9ef>$(</span>BUILD_DIR<span style=color:#66d9ef>)</span>/%.o<span style=color:#66d9ef>)</span>
+</code></pre></div><p>Now this above code handles wildcarding, it still does not handle rule
+generation, there are many ways to do this rule generation. I personally
+prefer wildcard matching the rules as well as is shown below:<div class=highlight><pre style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-makefile data-lang=makefile><span style=color:#a6e22e>all</span><span style=color:#f92672>:</span> <span style=color:#66d9ef>$(</span>DIR<span style=color:#66d9ef>)</span> <span style=color:#66d9ef>$(</span>OBJ<span style=color:#66d9ef>)</span>
+	echo <span style=color:#e6db74>&#34;Linking </span><span style=color:#66d9ef>$(</span>NAME<span style=color:#66d9ef>)</span><span style=color:#e6db74> version </span><span style=color:#66d9ef>$(</span>VERSION<span style=color:#66d9ef>)</span><span style=color:#e6db74>&#34;</span>
+	<span style=color:#66d9ef>$(</span>LD<span style=color:#66d9ef>)</span> -L link -T link.ld <span style=color:#66d9ef>$(</span>OBJ<span style=color:#66d9ef>)</span> <span style=color:#66d9ef>$(</span>COMP_OBJ<span style=color:#66d9ef>)</span> <span style=color:#66d9ef>$(</span>LDFLAGS<span style=color:#66d9ef>)</span> -o bin/<span style=color:#66d9ef>$(</span>NAME<span style=color:#66d9ef>)</span>
+	<span style=color:#66d9ef>$(</span>OBJ_COPY<span style=color:#66d9ef>)</span> -O binary bin/<span style=color:#66d9ef>$(</span>NAME<span style=color:#66d9ef>)</span> bin/<span style=color:#66d9ef>$(</span>NAME<span style=color:#66d9ef>)</span>.bin
+	echo <span style=color:#e6db74>&#34;Made </span><span style=color:#66d9ef>$(</span>NAME<span style=color:#66d9ef>)</span><span style=color:#e6db74> version: </span><span style=color:#66d9ef>$(</span>VERSION<span style=color:#66d9ef>)</span><span style=color:#e6db74>&#34;</span>
+
+<span style=color:#a6e22e>flash</span><span style=color:#f92672>:</span> all
+	<span style=color:#66d9ef>$(</span>FLASH<span style=color:#66d9ef>)</span> --reset write bin/<span style=color:#66d9ef>$(</span>NAME<span style=color:#66d9ef>)</span>.bin <span style=color:#66d9ef>$(</span>CHIP_FLASH<span style=color:#66d9ef>)</span>
+
+<span style=color:#a6e22e>flash_debug</span><span style=color:#f92672>:</span> all
+	<span style=color:#66d9ef>$(</span>FLASH<span style=color:#66d9ef>)</span> --reset write bin/<span style=color:#66d9ef>$(</span>NAME<span style=color:#66d9ef>)</span> <span style=color:#66d9ef>$(</span>CHIP_FLASH<span style=color:#66d9ef>)</span>
+
+<span style=color:#a6e22e>clean</span><span style=color:#f92672>:</span>
+	rm -rf <span style=color:#66d9ef>$(</span>DIR<span style=color:#66d9ef>)</span>
+	echo <span style=color:#e6db74>&#34;Made clean&#34;</span>
+
+<span style=color:#a6e22e>%/</span><span style=color:#f92672>:</span>
+	mkdir -p $@
+
+<span style=color:#a6e22e>$(BUILD_DIR)/$(CHIP)/%.S.o</span><span style=color:#f92672>:</span> src/<span style=color:#66d9ef>$(</span>CHIP<span style=color:#66d9ef>)</span>/%.S
+	echo <span style=color:#e6db74>&#34;[ASM] assembling </span>$?<span style=color:#e6db74>&#34;</span>
+	<span style=color:#66d9ef>$(</span>ASM<span style=color:#66d9ef>)</span> <span style=color:#66d9ef>$(</span>ASMFLAGS<span style=color:#66d9ef>)</span> -Wno-unused $? -o $@
+
+<span style=color:#a6e22e>$(BUILD_DIR)/$(CHIP)/%.c.o</span><span style=color:#f92672>:</span> src/<span style=color:#66d9ef>$(</span>CHIP<span style=color:#66d9ef>)</span>/%.c
+	echo <span style=color:#e6db74>&#34;[CC] compiling </span>$?<span style=color:#e6db74>&#34;</span>
+	<span style=color:#66d9ef>$(</span>CC<span style=color:#66d9ef>)</span> <span style=color:#66d9ef>$(</span>CFLAGS<span style=color:#66d9ef>)</span> -Wno-unused $? -o $@
+
+<span style=color:#a6e22e>$(BUILD_DIR)/$(CHIP)/%.cpp.o</span><span style=color:#f92672>:</span> src/<span style=color:#66d9ef>$(</span>CHIP<span style=color:#66d9ef>)</span>/%.cpp
+	echo <span style=color:#e6db74>&#34;[CXX] compiling </span>$?<span style=color:#e6db74>&#34;</span>
+	<span style=color:#66d9ef>$(</span>CXX<span style=color:#66d9ef>)</span> <span style=color:#66d9ef>$(</span>CXXFLAGS<span style=color:#66d9ef>)</span> -Wno-unused $? -o $@
+
+<span style=color:#a6e22e>$(BUILD_DIR)/tm_lib/%.S.o</span><span style=color:#f92672>:</span> src/tm_lib/%.S
+	echo <span style=color:#e6db74>&#34;[ASM] assembling </span>$?<span style=color:#e6db74>&#34;</span>
+	<span style=color:#66d9ef>$(</span>ASM<span style=color:#66d9ef>)</span> <span style=color:#66d9ef>$(</span>ASMFLAGS<span style=color:#66d9ef>)</span> -Wno-all -Wno-extra $? -o $@
+
+<span style=color:#a6e22e>$(BUILD_DIR)/tm_lib/%.c.o</span><span style=color:#f92672>:</span> src/tm_lib/%.c
+	echo <span style=color:#e6db74>&#34;[CC] compiling </span>$?<span style=color:#e6db74>&#34;</span>
+	<span style=color:#66d9ef>$(</span>CC<span style=color:#66d9ef>)</span> <span style=color:#66d9ef>$(</span>CFLAGS<span style=color:#66d9ef>)</span> -Wno-all -Wno-extra $? -o $@
+
+<span style=color:#a6e22e>$(BUILD_DIR)/tm_lib/%.cpp.o</span><span style=color:#f92672>:</span> src/tm_lib/%.cpp
+	echo <span style=color:#e6db74>&#34;[CXX] compiling </span>$?<span style=color:#e6db74>&#34;</span>
+	<span style=color:#66d9ef>$(</span>CXX<span style=color:#66d9ef>)</span> <span style=color:#66d9ef>$(</span>CXXFLAGS<span style=color:#66d9ef>)</span> -Wno-all -Wno-extra $? -o $@
+
+<span style=color:#a6e22e>$(BUILD_DIR)/%.S.o</span><span style=color:#f92672>:</span> src/%.S
+	echo <span style=color:#e6db74>&#34;[ASM] assembling </span>$?<span style=color:#e6db74>&#34;</span>
+	<span style=color:#66d9ef>$(</span>ASM<span style=color:#66d9ef>)</span> <span style=color:#66d9ef>$(</span>ASMFLAGS<span style=color:#66d9ef>)</span> $? -o $@
+
+<span style=color:#a6e22e>$(BUILD_DIR)/%.c.o</span><span style=color:#f92672>:</span> src/%.c
+	echo <span style=color:#e6db74>&#34;[CC] compiling </span>$?<span style=color:#e6db74>&#34;</span>
+	<span style=color:#66d9ef>$(</span>CC<span style=color:#66d9ef>)</span> <span style=color:#66d9ef>$(</span>CFLAGS<span style=color:#66d9ef>)</span> $? -o $@
+
+<span style=color:#a6e22e>$(BUILD_DIR)/%.cpp.o</span><span style=color:#f92672>:</span> src/%.cpp
+	echo <span style=color:#e6db74>&#34;[CXX] compiling </span>$?<span style=color:#e6db74>&#34;</span>
+	<span style=color:#66d9ef>$(</span>CXX<span style=color:#66d9ef>)</span> <span style=color:#66d9ef>$(</span>CXXFLAGS<span style=color:#66d9ef>)</span> $? -o $@
+</code></pre></div><p>The above are some rules made for an STM32 project, I was not compiling
+based on header changes but in certain cases you have to. In order to do
+this you can add this behind the src/%.[S|c|cpp] and change the $@ to a
+$&lt; which only takes the first argument from the dependant files.<p>Now if you are a linux kernel developer, they refrain from using these
+variables due to them being slow. However most projects are not big enough
+to use a Kconfig system, so I will refrain from explaining how to make
+these type of makefiles, or how to generate makefiles using autogen.
+There are plenty of great tutorials on these systems instead, due to the
+ease of use associated with them.<h2 id=cmake>CMake:</h2><p>Is another make system typically used for C/C++ projects. While it is
+easier to code up, the CMake systems sometimes cause errors in compilation.
+A major one I found was <a href=http://pointclouds.org/>PCL</a>, this is a prime
+example of CMake generating makefiles which break compilation time and time
+again. Compiling PCL was so bad that I even had to write a script to compile
+until it succeeded. Luckily for me once we compiled it the first time we
+could just flash Jetsons with the compiled code and no longer have to worry
+about it. However CMake and other Makefile generating scripts typically do
+not have error handling which a seasoned Makefile programmer can import in.<h2 id=qmake>QMake:</h2><p>This is similar to CMake, with a few Makefile additions. It has the
+extensibility found in Makefiles, with the benefits of being simple
+enough to code as CMake. The primary downside is it defaults to using
+QT libraries which if you want to use it to flash an STM32 is not always
+the best choice.<h2 id=gradle>Gradle:</h2><p>This is a good build system with tons of documentation and examples, I feel
+it is without a doubt one of the best build systems for JVM style projects.
+Unfortunately it has a lot of downsides as well, mostly in the pattern
+matching regard.<h2 id=waf>Waf:</h2><p>I have only used this a few times when working with
+<a href=https://named-data.net/>NDN</a>. I have never found a build system that is
+as bad as Waf, maybe now it changed however I would never use this from
+the experience that I had with it.<h1 id=most-important-tidbits>Most Important Tidbits:</h1><ul><li>Makefiles are simple once you understand them<li>KConfig is a nicer system than ccmake<li>NIX/GUIX has a very interesting build system, but requires a lot of previous experience<li>STAY AWAY FROM PYTHON BASED BUILD SYSTEMS THEY ARE NOT PORTABLE AS THEY CLAIM</ul></div><div class=post-comments></div><div class=push></div></div><footer class="footer text-center"><p>Copyright &copy; 2019 Michael Buchel -
+<span class=credit>Powered by
+<a target=_blank href=https://gohugo.io>Hugo</a>
+and
+<a target=_blank href=https://github.com/LordMathis/hugo-theme-nix/>Nix</a> theme.</span></footer></body>
