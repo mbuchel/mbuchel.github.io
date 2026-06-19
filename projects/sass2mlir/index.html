@@ -1,0 +1,305 @@
+<!DOCTYPE html><html lang="en"> <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Rewriting FlashAttention&#39;s machine code</title><meta name="description" content="How a SASS-level rewrite makes FlashAttention faster on an H100 — and the sass2mlir compiler approach behind it."><style>:root{--bg: #0b0e14;--panel: #161b22;--border: #30363d;--text: #c9d1d9;--text-strong: #e6edf3;--muted: #8b949e;--accent: #7ee787;--amber: #ffa657;--diff-add: #7ee787;--diff-del: #f78166;--font-mono: ui-monospace, Menlo, Monaco, "Cascadia Code", monospace;--font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;--radius: 8px;--space-1: 4px;--space-2: 8px;--space-3: 16px;--space-4: 24px;--space-5: 40px;--space-6: 64px;--maxw: 820px}*,*:before,*:after{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:var(--bg);color:var(--text);font-family:var(--font-sans);line-height:1.65;font-size:17px;-webkit-font-smoothing:antialiased}.container{max-width:var(--maxw);margin:0 auto;padding:0 var(--space-3)}h1,h2,h3{font-family:var(--font-mono);color:var(--text-strong);line-height:1.25}h1{font-size:2rem}h2{font-size:1.4rem;margin-top:var(--space-6)}h3{font-size:1.1rem}a{color:var(--accent);text-decoration:none}a:hover{text-decoration:underline}p{margin:var(--space-3) 0}code{font-family:var(--font-mono);background:var(--panel);border:1px solid var(--border);border-radius:4px;padding:1px 5px;font-size:.9em}pre{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);padding:var(--space-3);overflow:auto}pre code{background:none;border:none;padding:0}hr{border:none;border-top:1px solid var(--border);margin:var(--space-5) 0}.muted{color:var(--muted)}ul,ol{padding-left:1.3em}li{margin:var(--space-1) 0}table{width:100%;border-collapse:collapse;font-family:var(--font-mono);font-size:.9rem;margin:var(--space-3) 0}th,td{border:1px solid var(--border);padding:7px 11px;text-align:right}th{background:var(--panel);color:var(--muted)}th:first-child,td:first-child{text-align:left}figure img{width:100%;border:1px solid var(--border);border-radius:var(--radius);display:block}
+.back[data-astro-cid-gvpn4u4b]{font-family:var(--font-mono);font-size:.85rem;margin-top:var(--space-4)}.post-footer[data-astro-cid-gvpn4u4b]{margin:var(--space-6) 0;border-top:1px solid var(--border);padding-top:var(--space-3)}
+</style><style>.hero[data-astro-cid-bbe6dxrz]{padding:var(--space-6) 0 var(--space-4);border-bottom:1px solid var(--border)}.hero-kicker[data-astro-cid-bbe6dxrz]{font-family:var(--font-mono);color:var(--amber);font-size:.8rem;letter-spacing:.15em;text-transform:uppercase}.hero[data-astro-cid-bbe6dxrz] h1[data-astro-cid-bbe6dxrz]{font-size:2.4rem;margin:var(--space-2) 0}.hero-sub[data-astro-cid-bbe6dxrz]{color:var(--muted);font-size:1.1rem}.hero-extra[data-astro-cid-bbe6dxrz]{margin-top:var(--space-3)}
+</style><style>.section[data-astro-cid-sh445jdo]{margin:var(--space-6) 0}.kicker[data-astro-cid-sh445jdo]{font-family:var(--font-mono);font-size:.75rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+</style><style>.stat-badge[data-astro-cid-6vf7wjza]{display:inline-block;background:var(--panel);border:1px solid var(--border);border-radius:99px;padding:4px 12px;font-family:var(--font-mono);font-size:.95rem;color:var(--amber)}
+</style><style>.diff[data-astro-cid-djxg5aro]{background:var(--bg)}.diff[data-astro-cid-djxg5aro] .del[data-astro-cid-djxg5aro]{color:var(--diff-del)}.diff[data-astro-cid-djxg5aro] .add[data-astro-cid-djxg5aro]{color:var(--diff-add)}
+</style><style>.collapsible[data-astro-cid-hbmamkfo]{border:1px solid var(--border);border-radius:var(--radius);margin:var(--space-3) 0;background:var(--panel)}.collapsible[data-astro-cid-hbmamkfo] summary[data-astro-cid-hbmamkfo]{cursor:pointer;padding:var(--space-3);font-family:var(--font-mono);color:var(--accent);user-select:none}.collapsible[data-astro-cid-hbmamkfo][open] summary[data-astro-cid-hbmamkfo]{border-bottom:1px solid var(--border)}.collapsible-body[data-astro-cid-hbmamkfo]{padding:var(--space-3)}
+</style><style>.metric-table[data-astro-cid-4gds44v2]{width:100%;border-collapse:collapse;font-family:var(--font-mono);font-size:.92rem;margin:var(--space-3) 0}.metric-table[data-astro-cid-4gds44v2] th[data-astro-cid-4gds44v2],.metric-table[data-astro-cid-4gds44v2] td[data-astro-cid-4gds44v2]{border:1px solid var(--border);padding:8px 12px;text-align:right}.metric-table[data-astro-cid-4gds44v2] th[data-astro-cid-4gds44v2]{background:var(--panel);color:var(--muted)}.metric-table[data-astro-cid-4gds44v2] .lbl[data-astro-cid-4gds44v2]{text-align:left}.metric-table[data-astro-cid-4gds44v2] .hl[data-astro-cid-4gds44v2]{color:var(--accent)}
+</style><style>.callout[data-astro-cid-mrmim4ef]{border-left:3px solid var(--amber);background:var(--panel);border-radius:var(--radius);padding:var(--space-3);margin:var(--space-4) 0}.callout-title[data-astro-cid-mrmim4ef]{font-family:var(--font-mono);color:var(--amber);margin-bottom:var(--space-2);font-weight:600}
+</style><link rel="stylesheet" href="/_astro/StackPipeline_astro_astro_type_style_index_0_lang.B2yVmiD7.css"><link rel="stylesheet" href="/_astro/SassDialect_astro_astro_type_style_index_0_lang.Dcs5aws5.css"></head> <body> <main class="container">  <p class="back" data-astro-cid-gvpn4u4b><a href="/" data-astro-cid-gvpn4u4b>← projects</a></p> <article data-astro-cid-gvpn4u4b>  <header class="hero" data-astro-cid-bbe6dxrz> <div class="hero-kicker" data-astro-cid-bbe6dxrz>Machine-code rewrite · H100</div> <h1 data-astro-cid-bbe6dxrz>Rewriting FlashAttention&#39;s machine code</h1> <p class="hero-sub" data-astro-cid-bbe6dxrz>The same attention, fewer instructions — faster on Hopper.</p> <div class="hero-extra" data-astro-cid-bbe6dxrz><span class="stat-badge" data-astro-cid-6vf7wjza>9.6155ms → 7.6539ms · 1.26–1.29× faster (long context)</span> </div> </header> 
+<aside class="callout" data-astro-cid-mrmim4ef> <div class="callout-title" data-astro-cid-mrmim4ef>Part of an in-review research project</div> <div data-astro-cid-mrmim4ef><p>sass2mlir is the subject of a paper we’re preparing for peer review. This post is a
+high-level walkthrough — by design it <strong>holds back</strong> the implementation details, the full
+conversion-pass library, the SASS encoding internals, and the broader validation numbers
+while the work is under review, and nothing here is open-sourced yet. The paper also covers
+an <strong>online, on-the-fly conversion</strong> path — rewriting a kernel’s machine code as it loads,
+not just offline — which we only gesture at here. Treat this as the intuition, not the
+full method.</p></div> </aside> 
+<section class="section" data-astro-cid-sh445jdo> <div class="kicker" data-astro-cid-sh445jdo>The problem</div> <h2 data-astro-cid-sh445jdo>The official kernel under-uses the H100</h2> <p>FlashAttention’s official forward kernel was tuned for an earlier GPU generation’s
+habits. On an H100 it asks for <strong>255 registers per thread</strong> — the hardware maximum —
+which caps occupancy at <strong>12.5%</strong> and forces <strong>85 register spills</strong> to local memory.
+It moves data with <code>cp.async</code> + <code>ldsm</code> and multiplies with per-warp <code>HMMA</code> tensor-core
+ops. All correct — and all leaving Hopper’s newest hardware idle.</p><details class="collapsible" data-astro-cid-hbmamkfo> <summary data-astro-cid-hbmamkfo>Show the SASS detail</summary> <div class="collapsible-body" data-astro-cid-hbmamkfo><ul>
+<li>Registers/thread: <strong>255</strong> (max) → block-limited to 2 → 12.5% occupancy</li>
+<li>Register spills (STL/LDL pairs): <strong>85</strong></li>
+<li>Tensor MMA: <strong>512</strong> per-warp <code>HMMA</code> instructions</li>
+<li>Load path: <code>cp.async</code> (48 <code>LDGSTS</code>) + 144 <code>LDSM</code></li>
+<li>Launch grid: <code>256,2,4</code></li>
+</ul></div> </details> <p>And rebuilding from source doesn’t fix it. This kernel <strong>was</strong> compiled from
+source, on the H100, targeting Hopper (<code>sm_90</code>) — and the compiler <em>still</em> emitted
+the register-bound, pre-Hopper code above: per-warp <code>HMMA</code> instead of warpgroup
+<code>HGMMA</code>, <code>cp.async</code> instead of TMA, 85 spills, 12.5% occupancy. The hardware
+supports the faster path — the Triton compiler reaches it on the very same GPU —
+but the official source plus the <code>nvcc</code>/CUTLASS toolchain leaves those wins on the
+table. We tracked down <em>why</em>: it was compiled for <strong><code>sm_90</code></strong>, but the chip is
+<strong><code>sm_90a</code></strong>. Hopper’s headline instructions — warpgroup <code>HGMMA</code> (<code>wgmma</code>) and
+<code>TMA</code> — are gated behind the <em>architecture-specific</em> <code>sm_90a</code> target. Built for
+plain <code>sm_90</code>, <code>ptxas</code> simply can’t emit them and falls back to Ampere-class
+<code>HMMA</code> + <code>cp.async</code>; Triton targets <code>sm_90a</code>, so it reaches the fast path on the
+very same H100. That is the gap a tool like <strong>sass2mlir</strong> fills: it works <em>below</em>
+the source
+compiler, on the SASS it actually emitted — lift it to MLIR, apply the
+optimizations the toolchain missed, re-emit and reinject — so you can re-optimize
+for the exact GPU you have without waiting on upstream to change the source.</p> </section> 
+<section class="section" data-astro-cid-sh445jdo> <div class="kicker" data-astro-cid-sh445jdo>The insight</div> <h2 data-astro-cid-sh445jdo>The same math, a newer instruction set</h2> <p>Compare the official SASS against a Triton-compiled kernel doing the <em>identical</em>
+attention. The optimized version replaces per-warp tensor ops with <strong>warpgroup</strong>
+async MMA and the manual copy pipeline with <strong>TMA</strong> + hardware barriers:</p><pre class="diff" data-astro-cid-djxg5aro><code data-astro-cid-djxg5aro><span class="del" data-astro-cid-djxg5aro>- HMMA.16816.F32.F16  R8, R24, R40, R8   // per-warp MMA, operands in regs
+</span><span class="add" data-astro-cid-djxg5aro>+ HGMMA.64x64x16.F32.F16   // warpgroup async MMA, smem descriptors
+</span></code></pre> <pre class="diff" data-astro-cid-djxg5aro><code data-astro-cid-djxg5aro><span class="del" data-astro-cid-djxg5aro>- LDGSTS.E.128  [R12], [R4]   // cp.async global→shared
+</span><span class="add" data-astro-cid-djxg5aro>+ UTMALDG.2D  [desc], [R2]    // TMA bulk load + mbarrier
+</span></code></pre> <p>It distills to six transforms:</p><ol>
+<li><code>HMMA</code> (per-warp tensor MMA) → <strong><code>HGMMA</code></strong> (warpgroup async MMA)</li>
+<li><code>cp.async</code> + <code>ldsm</code> → <strong>TMA (<code>UTMALDG</code>) + mbarrier (<code>SYNCS</code>)</strong></li>
+<li>scalar work → <strong>uniform-register path</strong> (<code>URn</code>, <code>ELECT</code>, <code>VOTEU</code>)</li>
+<li>monolithic warp → <strong>producer/consumer warp specialization</strong></li>
+<li><code>FFMA.FTZ</code> → <strong><code>FFMA</code></strong> (drop FTZ)</li>
+<li>register spills (<code>STL</code>/<code>LDL</code>) → <strong>none</strong> (the uniform path frees the register budget)</li>
+</ol><details class="collapsible" data-astro-cid-hbmamkfo> <summary data-astro-cid-hbmamkfo>Show the opcode evidence</summary> <div class="collapsible-body" data-astro-cid-hbmamkfo><table class="metric-table" data-astro-cid-4gds44v2> <thead data-astro-cid-4gds44v2> <tr data-astro-cid-4gds44v2><th class="lbl" data-astro-cid-4gds44v2>Signal</th><th class data-astro-cid-4gds44v2>Official</th><th class data-astro-cid-4gds44v2>Triton</th></tr> </thead> <tbody data-astro-cid-4gds44v2> <tr data-astro-cid-4gds44v2> <td class="lbl " data-astro-cid-4gds44v2>Tensor MMA</td><td class=" " data-astro-cid-4gds44v2>512 HMMA</td><td class=" hl" data-astro-cid-4gds44v2>12 HGMMA</td> </tr><tr data-astro-cid-4gds44v2> <td class="lbl " data-astro-cid-4gds44v2>Load path</td><td class=" " data-astro-cid-4gds44v2>48 LDGSTS + 144 LDSM</td><td class=" hl" data-astro-cid-4gds44v2>20 SYNCS (TMA)</td> </tr><tr data-astro-cid-4gds44v2> <td class="lbl " data-astro-cid-4gds44v2>Register spills</td><td class=" " data-astro-cid-4gds44v2>85</td><td class=" hl" data-astro-cid-4gds44v2>0</td> </tr><tr data-astro-cid-4gds44v2> <td class="lbl " data-astro-cid-4gds44v2>Static instructions</td><td class=" " data-astro-cid-4gds44v2>2991</td><td class=" hl" data-astro-cid-4gds44v2>938</td> </tr> </tbody> </table> </div> </details>  </section> 
+<section class="section" data-astro-cid-sh445jdo> <div class="kicker" data-astro-cid-sh445jdo>The keeper</div> <h2 data-astro-cid-sh445jdo>sass2mlir: rewrite the machine code, keep the ABI</h2> <p>The real artifact is a compiler round trip: disassemble the official kernel, lift it
+into MLIR, apply conversion passes that implement the six rules, re-encode to SASS, and
+<strong>reinject while preserving the exact kernel ABI</strong> — so it drops into the existing binary
+with no host changes. Unlike a one-off hand-edit, the passes generalize to other kernels.</p><figure class="s2m" aria-label="sass2mlir compilation-stack and transform pipeline" data-astro-cid-y4hrxx56> <div class="s2m-head" data-astro-cid-y4hrxx56> <span class="s2m-dotline" data-astro-cid-y4hrxx56><i data-astro-cid-y4hrxx56></i><i data-astro-cid-y4hrxx56></i><i data-astro-cid-y4hrxx56></i></span> <span class="s2m-title" data-astro-cid-y4hrxx56>sass2mlir<span class="s2m-cursor" data-astro-cid-y4hrxx56>▸</span> live pipeline</span> <button class="s2m-play" type="button" aria-label="play or pause" data-astro-cid-y4hrxx56>❚❚</button> </div> <div class="s2m-body" data-astro-cid-y4hrxx56> <!-- compilation stack --> <ol class="s2m-stack" aria-label="GPU compilation stack" data-astro-cid-y4hrxx56> <li class="s2m-layer" data-layer="model" data-astro-cid-y4hrxx56><span class="ly-k" data-astro-cid-y4hrxx56>▸</span> model.py <em data-astro-cid-y4hrxx56>· PyTorch</em></li> <li class="s2m-layer" data-layer="src" data-astro-cid-y4hrxx56><span class="ly-k" data-astro-cid-y4hrxx56>▸</span> flash_attn <em data-astro-cid-y4hrxx56>· CUTLASS C++</em></li> <li class="s2m-layer" data-layer="ptx" data-astro-cid-y4hrxx56><span class="ly-k" data-astro-cid-y4hrxx56>▸</span> nvcc <em data-astro-cid-y4hrxx56>→ PTX</em></li> <li class="s2m-layer tap" data-layer="sass" data-astro-cid-y4hrxx56> <span class="ly-k" data-astro-cid-y4hrxx56>▸</span> ptxas <em data-astro-cid-y4hrxx56>→ SASS</em> <span class="tap-badge" data-astro-cid-y4hrxx56>sass2mlir taps here ⟶</span> </li> <li class="s2m-layer gpu" data-layer="gpu" data-astro-cid-y4hrxx56><span class="ly-k" data-astro-cid-y4hrxx56>▸</span> H100 <em data-astro-cid-y4hrxx56>· executes</em></li> </ol> <!-- transform pipeline --> <div class="s2m-pipe" data-astro-cid-y4hrxx56> <div class="pipe-stages" data-astro-cid-y4hrxx56> <span class="pipe-rail" data-astro-cid-y4hrxx56><span class="pipe-dot" data-astro-cid-y4hrxx56></span></span> <button class="stage active" data-i="0" type="button" data-astro-cid-y4hrxx56> <span class="st-i" data-astro-cid-y4hrxx56>01</span><span class="st-l" data-astro-cid-y4hrxx56>disassemble</span><span class="st-s done" data-astro-cid-y4hrxx56>done</span> </button> <button class="stage" data-i="1" type="button" data-astro-cid-y4hrxx56> <span class="st-i" data-astro-cid-y4hrxx56>02</span><span class="st-l" data-astro-cid-y4hrxx56>lift → MLIR</span><span class="st-s done" data-astro-cid-y4hrxx56>done</span> </button> <button class="stage" data-i="2" type="button" data-astro-cid-y4hrxx56> <span class="st-i" data-astro-cid-y4hrxx56>03</span><span class="st-l" data-astro-cid-y4hrxx56>conversion passes</span><span class="st-s done" data-astro-cid-y4hrxx56>done</span> </button> <button class="stage" data-i="3" type="button" data-astro-cid-y4hrxx56> <span class="st-i" data-astro-cid-y4hrxx56>04</span><span class="st-l" data-astro-cid-y4hrxx56>re-encode → SASS</span><span class="st-s done" data-astro-cid-y4hrxx56>done</span> </button> <button class="stage" data-i="4" type="button" data-astro-cid-y4hrxx56> <span class="st-i" data-astro-cid-y4hrxx56>05</span><span class="st-l" data-astro-cid-y4hrxx56>reinject ↻</span><span class="st-s done" data-astro-cid-y4hrxx56>offline · done</span> </button> </div> <div class="s2m-screen" data-astro-cid-y4hrxx56> <div class="scr-note" data-astro-cid-y4hrxx56>// read .text from the shipped cubin (~100% disassembled today)</div> <div class="scr-code" data-astro-cid-y4hrxx56><div class="scr-row"><span class="scr-b">1f 8e 7c 73 …  (raw bytes)</span><span class="scr-arrow">⟶</span><span class="scr-a">HMMA.16816.F32 R8, R24, R40</span></div><div class="scr-row"><span class="scr-b">00 30 04 00 …</span><span class="scr-arrow">⟶</span><span class="scr-a">LDGSTS.E.128 [R12], [R4]</span></div></div> </div> </div> </div> <figcaption class="s2m-cap muted" data-astro-cid-y4hrxx56>sass2mlir intercepts the SASS that <code data-astro-cid-y4hrxx56>ptxas</code> emits, rewrites it to Hopper-native machine code, and reinjects it — same kernel ABI, no source rebuild.</figcaption> </figure>  <script type="module">const p=[{note:"// read .text from the shipped cubin (~100% disassembled today)",rows:[{b:"1f 8e 7c 73 …  (raw bytes)",a:"HMMA.16816.F32 R8, R24, R40"},{b:"00 30 04 00 …",a:"LDGSTS.E.128 [R12], [R4]"}]},{note:"// raise each SASS op into typed MLIR — semantics, not encoding",rows:[{b:"HMMA.16816.F32 R8…",a:"nvgpu.mma.sync %a, %b : f16"},{b:"LDGSTS.E.128 [R12]…",a:"nvgpu.device_async_copy …"}]},{note:"// conversion passes — the 6 rules, retargeted for Hopper",rows:[{b:"HMMA (per-warp)",a:"HGMMA (warpgroup async)"},{b:"cp.async + ldsm",a:"UTMALDG + mbarrier (TMA)"},{b:"STL / LDL spills",a:"uniform-reg path (UR)"}]},{note:"// lower MLIR back to Hopper-native SASS bytes",rows:[{b:"nvgpu.warpgroup.mma",a:"HGMMA.64x64x16.F32"},{b:"nvgpu.tma.load",a:"UTMALDG.2D [desc]"}]},{note:"// patch .text in place — same Flash_fwd_params ABI, no host change",rows:[{b:"official .text  (49,792 B)",a:"patched .text — identical layout"},{b:".nv.info / reloc",a:"regenerated, offsets valid"}]}];function f(e,o){const t=e.querySelector(".scr-code"),r=e.querySelector(".scr-note");if(!t||!r)return;const a=p[o];t.classList.add("swap"),window.setTimeout(()=>{r.textContent=a.note,a.rows?t.innerHTML=a.rows.map(s=>`<div class="scr-row"><span class="scr-b">${s.b}</span><span class="scr-arrow">⟶</span><span class="scr-a">${s.a}</span></div>`).join(""):t.innerHTML=`<div class="scr-mono">${a.mono??""}</div>`,t.classList.remove("swap")},180);const n=e.querySelectorAll(".stage");n.forEach((s,i)=>s.classList.toggle("active",i===o));const c=e.querySelector(".pipe-dot"),l=n[o];if(c&&l){const s=e.querySelector(".pipe-rail").offsetTop;c.style.transform=`translateY(${l.offsetTop+l.offsetHeight/2-s}px)`}e.querySelector(".s2m-layer.tap")?.classList.toggle("hot",o===p.length-1)}function u(e){const o=window.matchMedia("(prefers-reduced-motion: reduce)").matches;let t=0,r=0,a=!o;const n=e.querySelector(".s2m-play"),c=i=>{t=(i+p.length)%p.length,f(e,t)},l=()=>c(t+1),d=()=>{r||(r=window.setInterval(l,2400),a=!0,n&&(n.textContent="❚❚"))},s=()=>{window.clearInterval(r),r=0,a=!1,n&&(n.textContent="▶")};e.querySelectorAll(".stage").forEach(i=>i.addEventListener("click",()=>{s(),c(Number(i.dataset.i))})),n?.addEventListener("click",()=>a?s():d()),c(0),o||d()}document.querySelectorAll(".s2m").forEach(u);</script><h3 id="why-hgmma-needs-the-full-round-trip">Why HGMMA needs the full round trip</h3><p><code>HMMA</code> and <code>HGMMA</code> aren’t two spellings of one instruction — they’re different
+execution models, so “use HGMMA” can’t be a textual swap. Everything feeding the
+multiply changes with it:</p><table class="metric-table" data-astro-cid-4gds44v2> <thead data-astro-cid-4gds44v2> <tr data-astro-cid-4gds44v2><th class="lbl" data-astro-cid-4gds44v2>Aspect</th><th class data-astro-cid-4gds44v2>HMMA (sm_80-class)</th><th class data-astro-cid-4gds44v2>HGMMA · wgmma (sm_90a)</th></tr> </thead> <tbody data-astro-cid-4gds44v2> <tr data-astro-cid-4gds44v2> <td class="lbl " data-astro-cid-4gds44v2>Scope</td><td class=" " data-astro-cid-4gds44v2>1 warp · 32 threads</td><td class=" hl" data-astro-cid-4gds44v2>warpgroup · 4 warps / 128 threads</td> </tr><tr data-astro-cid-4gds44v2> <td class="lbl " data-astro-cid-4gds44v2>Operands</td><td class=" " data-astro-cid-4gds44v2>registers (LDSM from smem)</td><td class=" hl" data-astro-cid-4gds44v2>shared-memory matrix descriptors</td> </tr><tr data-astro-cid-4gds44v2> <td class="lbl " data-astro-cid-4gds44v2>Sync</td><td class=" " data-astro-cid-4gds44v2>warp-synchronous</td><td class=" hl" data-astro-cid-4gds44v2>async + mbarrier</td> </tr><tr data-astro-cid-4gds44v2> <td class="lbl " data-astro-cid-4gds44v2>Accumulator</td><td class=" " data-astro-cid-4gds44v2>warp register layout</td><td class=" hl" data-astro-cid-4gds44v2>warpgroup register layout</td> </tr> </tbody> </table> <p>So the rewrite goes <em>through</em> MLIR. At the SASS level the matmul is fused into
+registers, schedule and sync — it can’t be safely edited in place. Lifted to MLIR
+it becomes a single typed op that a conversion pass can legally re-express in
+Hopper’s warpgroup form, then lower back to <code>sm_90a</code> SASS and reinject.</p><details class="collapsible" data-astro-cid-hbmamkfo> <summary data-astro-cid-hbmamkfo>Show the MLIR detail</summary> <div class="collapsible-body" data-astro-cid-hbmamkfo><ol>
+<li><strong>Lift SASS → MLIR.</strong> Raise the machine code into a typed IR that captures
+<em>semantics</em>: “an M×N×K fp16 multiply-accumulate,” “a global→shared copy,” the
+loop/region structure — abstracting away physical registers and schedule. The
+unusual direction: compilers lower <em>down</em>; sass2mlir raises <em>up</em>.</li>
+<li><strong>Conversion pass.</strong> Pattern-match the matmul op and re-express it in the
+warpgroup paradigm: per-warp <code>mma</code> → <code>wgmma</code>; operands re-sourced from
+shared-memory descriptors; loads converted to <strong>TMA</strong>; an <code>mbarrier</code> async
+pipeline inserted; work split producer/consumer across the warpgroup; the
+accumulator moved to the wgmma layout. Match → replace → legalize — a structured
+transform, not a patch. The spill-free uniform-register path falls out of the
+leaner Hopper sequence.</li>
+<li><strong>Re-encode + reinject.</strong> Lower back to SASS targeting <strong><code>sm_90a</code></strong> (so <code>HGMMA</code>/
+TMA can actually be emitted) and patch it into the cubin’s <code>.text</code> (+ updated
+<code>.nv.info</code>/reloc), preserving the kernel ABI.</li>
+</ol></div> </details> <h3 id="injecting-the-recompiled-cubin">Injecting the recompiled cubin</h3><p>The end product is a single self-contained cubin. To prove it inside an <strong>unmodified</strong>
+<code>flash_attn</code> process — without rebuilding PyTorch — we use an <code>LD_PRELOAD</code> harness, but it
+does something fundamentally simpler than the runtime swap: it <strong>replaces bytes, not an
+ABI</strong>. The recompiled cubin loads into the official kernel slot, launches with the right
+thread/shared-memory config, and produces correct output — same numbers as the official
+kernel, faster.</p><details class="collapsible" data-astro-cid-hbmamkfo> <summary data-astro-cid-hbmamkfo>How the byte-level injection works</summary> <div class="collapsible-body" data-astro-cid-hbmamkfo><p>The hard part is <em>where</em> the cubin enters the process. <code>flash_attn</code> doesn’t hand the
+loader a raw cubin — it hands it a <strong>fatbin</strong> (a container of cubins for several
+architectures). The driver picks the matching arch and <strong>extracts the raw ELF cubin into a
+fresh buffer with <code>memcpy</code></strong>. So the injection point isn’t a CUDA call at all — it’s that
+copy:</p><ol>
+<li><strong>Interpose <code>memcpy</code>.</strong> Unlike driver entry points, <code>memcpy</code> <em>is</em> reachable by ordinary
+<code>LD_PRELOAD</code> symbol interposition. The shim forwards every copy to the real <code>memcpy</code>,
+then inspects the destination: if it now holds a resident <strong>ELF cubin</strong> whose section
+table carries the target kernel’s mangled symbol, it overwrites that buffer in place
+with our recompiled cubin (header already carrying the <code>sm_90a</code> <code>e_flag</code>, plus the
+rewritten <code>.text</code>/<code>.nv.info</code>). The whole-cubin variant catches the 3.14 MB extraction in
+one shot; a section-overlay variant patches only <code>.text</code>/<code>.nv.info</code> when the layout
+matches. Bounds are gated by the copy length, so a partial or false ELF match finds
+nothing rather than reading wild memory.</li>
+<li><strong>Two launch fixups.</strong> The recompiled kernel is a <strong>256-thread warpgroup</strong> kernel that
+needs ~98 KB of dynamic shared memory. Via the resolver-hooked <code>cuModuleGetFunction</code> we
+grab the target handle; via <code>cuLaunchKernel(Ex)</code> we set the block to 256 and raise
+<code>MAX_DYNAMIC_SHARED_SIZE</code> to cover the smem footprint.</li>
+<li><strong>Forward the parameters verbatim.</strong> This is the crux: the <code>Flash_fwd_params</code> buffer is
+passed <strong>unchanged</strong>. No marshalling, no tensormap rebuild, no pointer translation —
+because the recompiled kernel <em>keeps the official ABI</em>. It reads q/k/v/o and the strides
+from the exact same const-bank offsets the official kernel did; it just builds its TMA
+descriptors in-kernel from those same fields.</li>
+</ol></div> </details> <p>That last point is the whole argument for doing this in the compiler instead of at launch.
+The runtime swap has to <strong>translate the ABI on every call</strong> — read the official params,
+rebuild a foreign 34-argument buffer and four tensormaps, then launch. The offline reinject
+<strong>translates nothing</strong>: it swaps the machine code once, the ABI is identical, and the launch
+site is untouched. That’s why it avoids the swap’s small-sequence penalty entirely — and
+why it ships as one binary instead of two.</p> </section> 
+<section class="section" data-astro-cid-sh445jdo> <div class="kicker" data-astro-cid-sh445jdo>The IR</div> <h2 data-astro-cid-sh445jdo>sass2mlir: an MLIR dialect for machine code</h2> <p>Underneath the round trip is a real <strong>MLIR dialect for NVIDIA SASS</strong>. It lifts raw GPU
+machine code into custom SSA ops, lets you transform it as a real IR, and lowers it back to
+<strong>byte-exact</strong> bytes — so a compiled kernel’s <code>.text</code> can be rewritten and patched into a
+cubin with no source recompile. Each SASS instruction becomes one op named for its mnemonic
+and opcode (<code>sass.&lt;MNEMONIC&gt;_0x&lt;opcode&gt;</code>), carrying its SSA operands and results, an inline
+<code>guard(%p)</code> predicate, modifiers glued to the name, and the authoritative 128-bit <code>raw</code>
+encoding that makes lowering exact.</p><figure class="s2d" aria-label="Interactive: the sass2mlir dialect and a byte-exact conversion pass" data-astro-cid-ggxhrbds> <figcaption class="s2d-title" data-astro-cid-ggxhrbds> <span class="s2d-kick" data-astro-cid-ggxhrbds>sass2mlir</span> an MLIR dialect for NVIDIA SASS — lift machine
+    code to SSA, transform it, lower back to <em data-astro-cid-ggxhrbds>byte-exact</em> bytes.
+</figcaption> <!-- ───────────────── PANEL A: op anatomy ───────────────── --> <section class="s2d-panel" data-astro-cid-ggxhrbds> <h4 class="s2d-h" data-astro-cid-ggxhrbds>The dialect · one instruction = one op</h4> <p class="s2d-sub muted" data-astro-cid-ggxhrbds>Each SASS instruction lifts to a single op
+<code data-astro-cid-ggxhrbds>sass.&lt;MNEMONIC&gt;_0x&lt;opcode&gt;</code>. Click a part:</p> <div class="s2d-op" role="group" aria-label="Lifted FFMA op — select a part" data-astro-cid-ggxhrbds> <button class="tok" data-k="res" type="button" data-astro-cid-ggxhrbds>%4706</button> <span class="op-x" data-astro-cid-ggxhrbds>=</span> <button class="tok sel" data-k="mn" type="button" data-astro-cid-ggxhrbds>sass.FFMA</button><button class="tok" data-k="op" type="button" data-astro-cid-ggxhrbds>_0x223</button><button class="tok" data-k="mod" type="button" data-astro-cid-ggxhrbds>.FTZ</button> <button class="tok" data-k="guard" type="button" data-astro-cid-ggxhrbds>guard(%4380)</button> <button class="tok" data-k="ops" type="button" data-astro-cid-ggxhrbds>-%4550, %4464, %4551</button> </div> <button class="s2d-rawline tok" data-k="raw" type="button" data-astro-cid-ggxhrbds> <span class="rk" data-astro-cid-ggxhrbds>raw</span> 0x223FF…<span class="muted" data-astro-cid-ggxhrbds> · authoritative 128-bit encoding</span> </button> <div class="s2d-explain" data-active="mn" data-astro-cid-ggxhrbds> <span class="ex-tag" data-astro-cid-ggxhrbds>mnemonic</span> <p class="ex-body" data-astro-cid-ggxhrbds>The SASS instruction name, namespaced into the <code data-astro-cid-ggxhrbds>sass</code> dialect. <code data-astro-cid-ggxhrbds>FFMA</code> = fused multiply-add.</p> </div> </section> <!-- ───────────────── PANEL B: conversion stepper ───────────────── --> <section class="s2d-panel s2d-conv" data-step="0" data-astro-cid-ggxhrbds> <h4 class="s2d-h" data-astro-cid-ggxhrbds>A conversion pass · retarget a constant-bank read</h4> <p class="s2d-sub muted" data-astro-cid-ggxhrbds>Adapt one kernel's params to another's ABI by moving a
+      load from <code data-astro-cid-ggxhrbds>c[0x0][0x210]</code> to <code data-astro-cid-ggxhrbds>c[0x0][0x2e8]</code> — touching
+<em data-astro-cid-ggxhrbds>only</em> that field.</p> <div class="conv-stage" data-astro-cid-ggxhrbds> <!-- the instruction, before/after --> <div class="conv-insn" data-astro-cid-ggxhrbds> <span class="il" data-astro-cid-ggxhrbds>LDC</span> <span class="ir" data-astro-cid-ggxhrbds>R12</span>,
+<span class="ic" data-astro-cid-ggxhrbds>c[0x0][<span class="off off-b" data-astro-cid-ggxhrbds>0x210</span><span class="off off-a" data-astro-cid-ggxhrbds>0x2e8</span>]</span> <span class="ic-tag muted" data-astro-cid-ggxhrbds>// softmax scale</span> </div> <!-- decoded fields --> <div class="conv-fields" aria-hidden="true" data-astro-cid-ggxhrbds> <span class="fld" data-f="op" data-astro-cid-ggxhrbds>opcode<b data-astro-cid-ggxhrbds>LDC</b></span> <span class="fld" data-f="dst" data-astro-cid-ggxhrbds>dst<b data-astro-cid-ggxhrbds>R12</b></span> <span class="fld f-target" data-f="cbank" data-astro-cid-ggxhrbds>const-bank<b class="cb-val" data-astro-cid-ggxhrbds>c[0x0][0x210]</b></span> <span class="fld" data-f="sched" data-astro-cid-ggxhrbds>sched<b data-astro-cid-ggxhrbds>·····</b></span> </div> <!-- raw nibble diff (server-rendered; JS re-renders identically) --> <div class="conv-raw" aria-hidden="true" data-astro-cid-ggxhrbds> <div class="raw-row" data-astro-cid-ggxhrbds><span class="rl" data-astro-cid-ggxhrbds>before</span><code class="raw raw-before" data-astro-cid-ggxhrbds>0x<span class="nb chg">8</span><span class="nb chg">4</span><span class="nb">0</span><span class="nb">0</span><span class="nb">f</span><span class="nb">f</span><span class="nb">0</span><span class="nb">0</span><span class="nb">7</span><span class="nb">b</span><span class="nb">8</span><span class="nb">2</span>, 0xf620000000800</code></div> <div class="raw-row raw-after-row" data-astro-cid-ggxhrbds><span class="rl" data-astro-cid-ggxhrbds>after</span><code class="raw raw-after" data-astro-cid-ggxhrbds>0x<span class="nb chg">b</span><span class="nb chg">a</span><span class="nb">0</span><span class="nb">0</span><span class="nb">f</span><span class="nb">f</span><span class="nb">0</span><span class="nb">0</span><span class="nb">7</span><span class="nb">b</span><span class="nb">8</span><span class="nb">2</span>, 0xf620000000800</code></div> <div class="raw-verdict" data-astro-cid-ggxhrbds></div> </div> </div> <div class="conv-controls" data-astro-cid-ggxhrbds> <button class="conv-play" type="button" aria-label="play / pause" data-astro-cid-ggxhrbds>▶</button> <ol class="conv-steps" data-astro-cid-ggxhrbds> <li class="on" data-s="0" data-astro-cid-ggxhrbds>walk</li> <li data-s="1" data-astro-cid-ggxhrbds>decode</li> <li data-s="2" data-astro-cid-ggxhrbds>match</li> <li data-s="3" data-astro-cid-ggxhrbds>re-encode</li> <li data-s="4" data-astro-cid-ggxhrbds>mask-verify</li> <li data-s="5" data-astro-cid-ggxhrbds>write</li> </ol> </div> <p class="conv-note muted" data-astro-cid-ggxhrbds>The pass walks each instruction op in the lifted module, looking for the pattern it rewrites.</p> </section> </figure>  <script type="module">const T={res:{tag:"result",html:"The SSA value this op <b>defines</b>. Registers are real MLIR values (<code>%n</code>), so def-use chains and dataflow are native — not text."},mn:{tag:"mnemonic",html:"The SASS instruction name, namespaced into the <code>sass</code> dialect. <code>FFMA</code> = fused multiply-add."},op:{tag:"opcode",html:"The raw hardware opcode (<code>0x223</code>), glued to the name so distinct encodings stay distinct ops — never ambiguous."},mod:{tag:"modifiers",html:"Instruction flags glued to the op name (<code>.FTZ</code> = flush-to-zero). They are part of the op identity, not side data."},guard:{tag:"inline guard",html:"The per-lane predicate is a <code>guard(%p)</code> operand, not a separate predicate op — so predication is visible directly in the dataflow graph."},ops:{tag:"SSA operands",html:"Three source values; the leading <code>-</code> is operand negation. Every operand is a real MLIR value, so a pass can trace exactly where each came from."},raw:{tag:"raw encoding",html:"The <b>authoritative</b> 128-bit machine encoding, preserved on every op. SSA is the analysis view; <code>raw</code> is ground truth — lowering <b>re-encodes</b> each op, and an untouched op re-encodes back to its exact <code>raw</code> bits, so the round-trip is byte-exact."}},y="8400ff007b82",w="ba00ff007b82",v=[{note:"The pass walks each instruction op in the lifted module, looking for the pattern it rewrites."},{note:"Decode the op's raw bytes into structured fields: opcode, destination register, the constant-bank operand, scheduling bits."},{note:"Match the operand to rewrite — here a constant-bank read of c[0x0][0x210] (the source kernel's softmax-scale slot)."},{note:"Re-encode the instruction with the new value (0x2e8) through the assembler, producing a fresh full encoding."},{note:"Mask-verify: diff old vs new and confirm ONLY the offset field's bits moved — then apply just those bits. Opcode, dst reg and scheduling stay byte-identical."},{note:"Write the new raw back. Lowering re-encodes the op to machine code → the cubin's .text changes by exactly this one field, nothing else."}];function x(e,i){let n="";for(let t=0;t<e.length;t++){const c=e[t]!==i[t]?" chg":"";n+=`<span class="nb${c}">${e[t]}</span>`}return n}function A(e){const i=e.querySelectorAll(".tok"),n=e.querySelector(".s2d-explain"),t=n?.querySelector(".ex-tag"),c=n?.querySelector(".ex-body"),d=o=>{const r=T[o];!r||!n||!t||!c||(i.forEach(a=>a.classList.toggle("sel",a.dataset.k===o)),n.dataset.active=o,t.textContent=r.tag,c.innerHTML=r.html)};i.forEach(o=>o.addEventListener("click",()=>d(o.dataset.k||"mn"))),d("mn")}function k(e){const i=window.matchMedia("(prefers-reduced-motion: reduce)").matches,n=e.querySelector(".raw-before"),t=e.querySelector(".raw-after"),c=e.querySelector(".raw-verdict"),d=e.querySelector(".conv-note"),o=e.querySelector(".cb-val"),r=e.querySelectorAll(".conv-steps li"),a=e.querySelector(".conv-play");n&&(n.innerHTML="0x"+x(y,w)+", 0xf620000000800"),t&&(t.innerHTML="0x"+x(w,y)+", 0xf620000000800");const f=v.length;let s=0,l=0;const u=h=>{s=(h+f)%f,e.setAttribute("data-step",String(s)),d&&(d.textContent=v[s].note),o&&(o.textContent=s>=5?"c[0x0][0x2e8]":"c[0x0][0x210]"),c&&(c.textContent=s>=4?"only 8 bits differ · 84 → ba · 120 of 128 bits byte-identical":""),r.forEach((b,m)=>{b.classList.toggle("on",m===s),b.classList.toggle("passed",m<s)})},S=()=>u(s+1),p=()=>{window.clearInterval(l),l=0,a&&(a.textContent="▶")},g=()=>{l||(l=window.setInterval(S,2600),a&&(a.textContent="❚❚"))};r.forEach(h=>h.addEventListener("click",()=>{p(),u(Number(h.dataset.s))})),a?.addEventListener("click",()=>l?p():g()),u(0),i||g()}document.querySelectorAll(".s2d").forEach(e=>{A(e),k(e)});</script><p>Because lift→lower is byte-exact, <strong>any</strong> difference in the output is exactly the transform
+you applied — nothing else moves. That’s what makes it safe to optimize or retarget a
+shipped kernel at the machine-code level and drop the result straight back into the original
+cubin.</p><details class="collapsible" data-astro-cid-hbmamkfo> <summary data-astro-cid-hbmamkfo>Show a real lifted Hopper (sm_90a) kernel</summary> <div class="collapsible-body" data-astro-cid-hbmamkfo><p>Control flow is recovered into MLIR basic blocks; φ-nodes at joins become block arguments
+(Braun SSA), so cross-block dataflow is native MLIR.</p><pre class="astro-code github-dark" style="background-color:#24292e;color:#e1e4e8;overflow-x:auto" tabindex="0" data-language="plaintext"><code><span class="line"><span>module {</span></span>
+<span class="line"><span>  sass.func &quot;lifted&quot; {</span></span>
+<span class="line"><span>    %0 = builtin.unrealized_conversion_cast to !sass.reg     // kernel live-in values</span></span>
+<span class="line"><span>    ...</span></span>
+<span class="line"><span>    // fused multiply-add: predicated, negated first operand, one result</span></span>
+<span class="line"><span>    %4706 = sass.FFMA_0x223.FTZ guard(%4380) -%4550, %4464, %4551</span></span>
+<span class="line"><span>              : (!sass.reg, !sass.reg, !sass.reg) -&gt; (!sass.reg)</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>    // warpgroup matrix-multiply: two results, four operands</span></span>
+<span class="line"><span>    %5717:2 = sass.HGMMA_0xdf0.64x8x16.F32 guard(%425) %5716, %5590, %5716, %5716</span></span>
+<span class="line"><span>              : (!sass.reg, !sass.reg, !sass.reg, !sass.reg) -&gt; (!sass.reg, !sass.reg)</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>    sass.UTMALDG_0x5b4.3D guard(%266) %31250, %31086 : (!sass.reg, !sass.reg) -&gt; ()  // TMA load</span></span>
+<span class="line"><span>    sass.STSM_0x844.16.M88.4 %33430, %33553 : (!sass.reg, !sass.reg) -&gt; ()           // smem store</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>    cf.br ^bb1(%4783, %4751, ... : !sass.reg, ...)   // block args are SSA phis</span></span>
+<span class="line"><span>    sass.exit</span></span>
+<span class="line"><span>  }</span></span>
+<span class="line"><span>}</span></span></code></pre><p>The SSA values are the <strong>analysis</strong> view that decides <em>what</em> to change; <code>raw</code> is the
+<strong>ground truth</strong> that gets rewritten and lowered. The conversion above
+(<code>c[0x0][0x210]</code> → <code>c[0x0][0x2e8]</code>) is exactly the decode → match → re-encode → mask-verify
+loop in the widget: it edits a single field and proves, bit by bit, that nothing else moved.</p></div> </details>  </section> 
+<section class="section" data-astro-cid-sh445jdo> <div class="kicker" data-astro-cid-sh445jdo>Alternative approach</div> <h2 data-astro-cid-sh445jdo>The runtime swap: when a rewrite outgrows its slot</h2> <p>There’s more than one way to get optimized machine code into a running process, and we
+built a second one: a <strong>runtime swap</strong> — an <code>LD_PRELOAD</code> shim that hooks the CUDA driver’s
+symbol resolver, intercepts the <code>cuLaunchKernelEx</code> call for the official kernel, and
+relaunches the optimized Triton kernel from its cubin (templating its parameter buffer and
+patching only the device pointers). It lifts the official call site from
+102 to 132 runs/s.</p><p>This is a genuinely useful technique — just not the one this flash-attention rewrite needs.
+Offline reinjection patches the new code into the cubin’s <strong>existing <code>.text</code> slot</strong>, which
+works as long as the rewrite <em>fits</em>. The moment an optimization makes a function <strong>grow
+past the space allotted to it</strong> in the binary, you can’t patch in place — there’s nowhere
+to put the extra bytes. A runtime swap sidesteps that entirely: it launches a separately
+compiled kernel at the original call site, so the replacement’s size is unconstrained by
+the original’s footprint. Our flash-attention rewrite fits its slot, so reinjection is the
+right tool here — we built the swap to demonstrate the capability a different way, and as
+the approach you’d reach for when a rewrite <em>doesn’t</em> fit.</p><details class="collapsible" data-astro-cid-hbmamkfo> <summary data-astro-cid-hbmamkfo>How the runtime swap actually hooks the driver</summary> <div class="collapsible-body" data-astro-cid-hbmamkfo><p>You can’t just export your own <code>cuLaunchKernelEx</code> and let <code>LD_PRELOAD</code> win. The CUDA
+runtime doesn’t call driver entry points by their linker symbol — it <strong>resolves them
+dynamically at runtime</strong> through <code>dlsym</code> and the driver’s own <code>cuGetProcAddress</code>. A plain
+symbol interposition is simply never reached. So the shim hooks the <em>resolvers</em>:</p><ol>
+<li><strong>Bootstrap the real <code>dlsym</code>.</strong> Our <code>dlsym</code> override needs the genuine one to forward
+to, but asking <code>dlsym</code> for <code>dlsym</code> is circular. The escape hatch is the versioned
+lookup: <code>dlvsym(RTLD_NEXT, &quot;dlsym&quot;, &quot;GLIBC_2.2.5&quot;)</code> hands back libc’s real <code>dlsym</code>
+without going through the symbol we’re overriding.</li>
+<li><strong>Intercept both resolvers.</strong> Our <code>dlsym</code> and <code>cuGetProcAddress</code> watch for requests for
+<code>cuLaunchKernelEx</code> (the entry Triton and modern CUDA launch through) and return a
+pointer to <em>our</em> function instead of the driver’s. Every launch in the process now flows
+through us.</li>
+<li><strong>Identify and divert the official launch.</strong> At each call we check the kernel function
+handle. For anything but the official <code>flash_fwd</code> kernel we forward to the real driver
+untouched. For the official kernel we <strong>don’t launch it</strong> — we marshal a fresh parameter
+buffer for the <em>Triton</em> kernel: read the device pointers (q/k/v/o) and shapes out of the
+official 464-byte <code>Flash_fwd_params</code>, build the four TMA tensormap descriptors Triton
+expects, and launch the Triton cubin’s kernel with <em>its</em> grid/block/dynamic-smem config.</li>
+</ol><p>That per-launch marshalling — a 34-argument buffer plus four tensormaps rebuilt every call
+— is exactly the fixed cost that makes short sequences regress in the sweep below.</p></div> </details> <p>The trade-off is that it ships two kernels and pays an ABI translation on every launch
+(the parameter marshalling above), rather than producing a single self-contained binary the
+way reinjection does. Different tool, different job.</p> </section> 
+<section class="section" data-astro-cid-sh445jdo> <div class="kicker" data-astro-cid-sh445jdo>Benchmarks</div> <h2 data-astro-cid-sh445jdo>Faster while leaning on the hardware less</h2> <table class="metric-table" data-astro-cid-4gds44v2> <thead data-astro-cid-4gds44v2> <tr data-astro-cid-4gds44v2><th class="lbl" data-astro-cid-4gds44v2>Metric</th><th class data-astro-cid-4gds44v2>Official</th><th class data-astro-cid-4gds44v2>Triton (swap)</th><th class data-astro-cid-4gds44v2>Offline reinject</th></tr> </thead> <tbody data-astro-cid-4gds44v2> <tr data-astro-cid-4gds44v2> <td class="lbl " data-astro-cid-4gds44v2>Compute throughput</td><td class=" " data-astro-cid-4gds44v2>51%</td><td class=" hl" data-astro-cid-4gds44v2>40.97%</td><td class=" " data-astro-cid-4gds44v2>—</td> </tr><tr data-astro-cid-4gds44v2> <td class="lbl " data-astro-cid-4gds44v2>Memory throughput</td><td class=" " data-astro-cid-4gds44v2>51.58%</td><td class=" hl" data-astro-cid-4gds44v2>22.49%</td><td class=" " data-astro-cid-4gds44v2>—</td> </tr><tr data-astro-cid-4gds44v2> <td class="lbl " data-astro-cid-4gds44v2>Duration (instrumented)</td><td class=" " data-astro-cid-4gds44v2>11.9 ms</td><td class=" hl" data-astro-cid-4gds44v2>10.19 ms</td><td class=" " data-astro-cid-4gds44v2>—</td> </tr><tr data-astro-cid-4gds44v2> <td class="lbl " data-astro-cid-4gds44v2>Registers/thread</td><td class=" " data-astro-cid-4gds44v2>255</td><td class=" hl" data-astro-cid-4gds44v2>170</td><td class=" " data-astro-cid-4gds44v2>—</td> </tr><tr data-astro-cid-4gds44v2> <td class="lbl " data-astro-cid-4gds44v2>Register spills</td><td class=" " data-astro-cid-4gds44v2>85</td><td class=" hl" data-astro-cid-4gds44v2>0</td><td class=" " data-astro-cid-4gds44v2>—</td> </tr><tr data-astro-cid-4gds44v2> <td class="lbl " data-astro-cid-4gds44v2>Occupancy</td><td class=" " data-astro-cid-4gds44v2>12.5%</td><td class=" hl" data-astro-cid-4gds44v2>12.5%</td><td class=" " data-astro-cid-4gds44v2>—</td> </tr> </tbody> </table> <aside class="callout" data-astro-cid-mrmim4ef> <div class="callout-title" data-astro-cid-mrmim4ef>Lower utilization ≠ slower</div> <div data-astro-cid-mrmim4ef><p>Both compute (51% → 40.97%) and
+memory (51.58% → 22.49%) throughput drop —
+yet latency drops too. Throughput-% measures hardware <em>pressure</em>, not speed. The rewrite
+does the same attention with less wasted work (spills gone → less memory traffic; HGMMA +
+uniform registers → fewer instructions issued), so it finishes faster while leaning on the
+hardware less.</p></div> </aside> <p>A sequence-length sweep (10k iterations each, H100) shows the win grow with
+context length. At short sequences (≤1k tokens) the Triton path is actually a few
+percent <strong>slower</strong> — not because of the math, but because the <strong>Triton runtime
+wraps its kernel variables heavily</strong>: each launch marshals a 34-argument parameter
+buffer including four TMA tensormap descriptors (vs the official kernel’s single
+464-byte <code>Flash_fwd_params</code> struct), on top of warp-specialization and mbarrier
+setup. That fixed per-launch cost dominates when there’s barely any attention work
+to do. From ~4k tokens up the kernel win takes over, settling at <strong>1.26–1.29×</strong> —
+the long-context regime that matters. (A sass2mlir-recompiled kernel keeps the
+official’s lean ABI, so it would avoid this small-sequence penalty entirely.)</p><figure style="margin: var(--space-4) 0;"><img src="/latency_compare.png" alt="FlashAttention latency vs sequence length on H100, with vs without our software (runtime swap), 10k iterations, log-log."/><figcaption class="muted">Latency vs sequence length (H100, 10k iters). “With” = the runtime LD_PRELOAD swap (Triton kernel). A sass2mlir recompiled-cubin curve will be added here.</figcaption></figure>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th style="text-align:right">N_CTX</th><th style="text-align:right">without (ms)</th><th style="text-align:right">triton swap (ms)</th><th style="text-align:right">offline reinject (ms)</th><th style="text-align:right">swap ×</th><th style="text-align:right">reinject ×</th></tr></thead><tbody><tr><td style="text-align:right">128</td><td style="text-align:right">0.0404</td><td style="text-align:right">0.0426</td><td style="text-align:right">—</td><td style="text-align:right">0.95×</td><td style="text-align:right">—</td></tr><tr><td style="text-align:right">256</td><td style="text-align:right">0.0402</td><td style="text-align:right">0.0418</td><td style="text-align:right">—</td><td style="text-align:right">0.96×</td><td style="text-align:right">—</td></tr><tr><td style="text-align:right">512</td><td style="text-align:right">0.0451</td><td style="text-align:right">0.0478</td><td style="text-align:right">—</td><td style="text-align:right">0.94×</td><td style="text-align:right">—</td></tr><tr><td style="text-align:right">1024</td><td style="text-align:right">0.0454</td><td style="text-align:right">0.0475</td><td style="text-align:right">—</td><td style="text-align:right">0.96×</td><td style="text-align:right">—</td></tr><tr><td style="text-align:right">2048</td><td style="text-align:right">0.0435</td><td style="text-align:right">0.0420</td><td style="text-align:right">—</td><td style="text-align:right">1.04×</td><td style="text-align:right">—</td></tr><tr><td style="text-align:right">4096</td><td style="text-align:right">0.1527</td><td style="text-align:right">0.1190</td><td style="text-align:right">—</td><td style="text-align:right">1.28×</td><td style="text-align:right">—</td></tr><tr><td style="text-align:right">8192</td><td style="text-align:right">0.6082</td><td style="text-align:right">0.4717</td><td style="text-align:right">—</td><td style="text-align:right">1.29×</td><td style="text-align:right">—</td></tr><tr><td style="text-align:right">16384</td><td style="text-align:right">2.4150</td><td style="text-align:right">1.8930</td><td style="text-align:right">—</td><td style="text-align:right">1.28×</td><td style="text-align:right">—</td></tr><tr><td style="text-align:right">32768</td><td style="text-align:right">9.6155</td><td style="text-align:right">7.6539</td><td style="text-align:right">—</td><td style="text-align:right">1.26×</td><td style="text-align:right">—</td></tr></tbody></table><p class="muted">“Triton swap” is the runtime LD_PRELOAD swap. The <strong>offline
+reinject</strong> column is the sass2mlir recompiled cubin (optimized machine code
+patched back into the official kernel, same ABI) — numbers are being added from the latest
+sweep, alongside a third curve on the chart. Because the offline kernel keeps the lean
+official launch, it avoids the swap’s small-sequence overhead.</p> </section> 
+<section class="section" data-astro-cid-sh445jdo> <div class="kicker" data-astro-cid-sh445jdo>Status</div> <h2 data-astro-cid-sh445jdo>Where this stands</h2> <p><strong>Working today:</strong> the <strong>complete</strong> pipeline — SASS disassembly (~100%), <strong>MLIR lift, the
+conversion passes (the six rules), SASS re-encode, and offline reinjection</strong>: the recompiled
+<code>.text</code> and updated <code>.nv.info</code>/reloc are written back into the cubin to ship a single
+self-contained, optimized kernel that drops into the official slot with <strong>no host changes
+and no runtime swap</strong> (official ABI, correct output). The runtime swap remains as the
+separate technique for rewrites that outgrow their slot
+(132 runs/s). The method itself — including an <strong>online,
+on-the-fly conversion</strong> path that rewrites kernels as they load — is the subject of a paper
+currently in peer-review prep, which is why the implementation details and full validation
+set are held back here.</p><p><strong>Next:</strong> broaden the <strong>conversion-pass library</strong> beyond the six rules so the lift→transform→
+re-encode path generalizes to more kernels and more optimization patterns. As those passes
+get more aggressive, the rewritten code will <strong>grow past what fits in the original <code>.text</code>
+slot</strong> — which is exactly the case the runtime swap was built for. The two techniques are
+complementary: reinjection while the rewrite fits, swap once it outgrows its footprint.</p> </section>   </article> <footer class="post-footer" data-astro-cid-gvpn4u4b><p class="muted" data-astro-cid-gvpn4u4b>2026-06-18</p></footer>  </main> </body></html> 
