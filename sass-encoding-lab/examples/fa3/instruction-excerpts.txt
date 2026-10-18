@@ -1,0 +1,100 @@
+FA2 -> fresh Hopper program: exact selected instruction excerpts
+
+These are representative regions of the two bundled noncausal functions.
+They show logical components, NOT same-PC patch pairs. Instruction addresses,
+registers, tile shape, thread roles and layout change during whole-body generation.
+Disassembly has intervening instructions omitted. All addresses are relative
+to the selected function. Native program IR is a separate diagnostic artifact.
+
+INPUT: fa2-input.cubin
+SHA-256 fbd4bc6cbc5b6f028cd30f23eb90783e97ca5a60d5e20b294dc83d08bb98ec52
+Selected text: 49,792 bytes / 3,112 instruction words
+Selected-text SHA-256
+0a2a51d4e0a8309b49e4cbdd22d9dbfe941f75b90a4ca7f8e1ba045453947159
+
+Transport:
+/*0700*/ LDGSTS.E.BYPASS.LTC128B.128 [R246], desc[UR16][R4.64];
+/*0de0*/ LDGDEPBAR;
+/*0e80*/ DEPBAR.LE SB0, 0x0;
+/*0e90*/ BAR.SYNC.DEFER_BLOCKING 0x0;
+
+Matrix fragments and warp MMA:
+/*1180*/ LDSM.16.M88.4 R12, [R3+0x4000];
+/*11a0*/ LDSM.16.M88.4 R4, [R234+0x2000];
+/*1230*/ HMMA.16816.F32 R56, R4.reuse, R12, RZ;
+/*1240*/ HMMA.16816.F32 R116, R4, R14, RZ;
+
+Intermediate source normalization (constructed forms, NOT final disassembly):
+QK uses four HGMMA.64x128x16.F32 per M64 source half, then full gsb0 wait.
+PV uses eight HGMMA.64x64x16.F32 per M64 source half for the N128 reduction
+(two M64 halves in the source window), with a transposed V
+shared descriptor. Independently constructed source forms do not copy native
+FA3 matrix recipes. Complete program reconstruction follows this normalization.
+
+OUTPUT: fa3-style-output.cubin
+SHA-256 89050c25cdfbfecd0395ad88131eee670e095978583b94bbe777254b634e6a01
+Selected body: 30,864 bytes / 1,929 regenerated instruction words
+Selected-text SHA-256
+d29b8338bfef612af95f6504d49fb8fd018d9488f145dfc5f7232ee63add88eb
+
+Initial QK: M64 x N192 x D64, four K16 steps:
+/*0b20*/ WARPGROUP.ARRIVE;
+/*0b30*/ HGMMA.64x192x16.F32 R24, gdesc[UR32], RZ, !UPT;
+/*0b40*/ HGMMA.64x192x16.F32 R24, gdesc[UR36], R24;
+/*0b50*/ HGMMA.64x192x16.F32 R24, gdesc[UR40], R24;
+/*0b60*/ HGMMA.64x192x16.F32 R24, gdesc[UR44], R24, gsb0;
+/*0b70*/ WARPGROUP.DEPBAR.LE gsb0, 0x0;
+
+Fresh scalar weights and shared probability publication (excerpts):
+/*1990*/ FFMA.FTZ R24, R24, R0, -R10;
+/*19d0*/ MUFU.EX2 R24, R24;
+/*2ca0*/ F2FP.F16.F32.PACK_AB R24, R25, R24;
+/*2cb0*/ F2FP.F16.F32.PACK_AB R25, R27, R26;
+/*2cc0*/ F2FP.F16.F32.PACK_AB R26, R29, R28;
+/*2cd0*/ F2FP.F16.F32.PACK_AB R27, R31, R30;
+/*2ce0*/ STSM.16.M88.4 [R15], R24;
+/*3080*/ MEMBAR.ALL.CTA;
+/*3090*/ FENCE.VIEW.ASYNC.S;
+/*30a0*/ NOP;
+/*30b0*/ WARPSYNC.ALL;
+
+Previous PV in a recurrent overlap iteration: twelve K16 steps for N192.
+The intervening descriptor increments and other instructions are omitted:
+/*34e0*/ HGMMA.64x64x16.F32 R120, gdesc[UR36].tnspB, R120;
+/*3510*/ HGMMA.64x64x16.F32 R120, gdesc[UR36].tnspB, R120;
+...
+/*36f0*/ HGMMA.64x64x16.F32 R120, gdesc[UR36].tnspB, R120, gsb0;
+/*3750*/ WARPGROUP.DEPBAR.LE gsb0, 0x1;
+...
+/*3e40*/ WARPGROUP.DEPBAR.LE gsb0, 0x0;
+
+One K0 transfer: expect 0x6000 = 24,576 bytes, then TMA:
+/*69a0*/ ELECT P4, URZ, PT;
+/*69b0*/ VIADD R8, R5, 0x6000;
+/*69c0*/ R2UR UR24, R8;
+/*69d0*/ VIADD R9, R5, 0x30010;
+/*69e0*/ R2UR UR25, R9;
+/*69f0*/ UMOV UR26, UR40;
+/*6a00*/ UMOV UR27, UR41;
+/*6a10*/ UMOV UR28, UR42;
+/*6a20*/ UMOV UR29, UR43;
+/*6a30*/ IMAD.MOV.U32 R10, RZ, RZ, 0x6000;
+/*6a40*/ @P4 SYNCS.ARRIVE.TRANS64 RZ, [R5+URZ+0x30010], R10;
+/*6a50*/ UTMALDG.4D [UR24], [UR34], desc[UR38];
+
+Native logical IR links:
+113 / 123 / 133-134: FMA, exp2, FP16 P conversion, FP32 denominator reduction.
+629: current QK.
+646: previous PV.
+647: current online step consumes previous PV's completed accumulator.
+671: five-value carry.
+673: final pending PV drain.
+
+Physical contracts:
+- K/V ready barrier count 1; empty barrier count 3, one release per math group.
+- Carry stage epochs and alternating slot cursor across persistent query tickets.
+- Named barriers 1 -> 2 -> 3 relay issue credit between math groups.
+- Q reuses named barrier 10 with 416 participants, not the K/V empty cycle.
+- Full matrix completion precedes stage release/P overwrite where required.
+- Every selected published word is regenerated; the reference supplies the ABI shell.
+- Shorter code and logical overlap are not by themselves a runtime validation.

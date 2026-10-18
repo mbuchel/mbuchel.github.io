@@ -1,0 +1,62 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1120 610" role="img" aria-labelledby="title desc">
+  <title id="title">The native pass has two distinct transformations</title>
+  <desc id="desc">Source instruction normalization is followed by complete logical reconstruction and fresh body generation. Follow stages 1, 2 and 3 across the top row, then 4, 5 and 6 from right to left along the bottom row.</desc>
+  <defs>
+    <marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#9cd9c0"/></marker>
+  </defs>
+  <rect width="1120" height="610" rx="14" fill="#0d161d"/>
+  <g font-family="system-ui, sans-serif">
+    <text x="28" y="42" fill="#d9e5e9" font-size="26">The native pass has two distinct transformations</text>
+    <text x="28" y="74" fill="#98adba" font-size="18">Follow the arrows: across the top row, then back along the bottom row.</text>
+    <g transform="translate(28 100)" text-anchor="middle">
+      <rect width="328" height="190" rx="12" fill="#152129" stroke="#9cd9c0"/>
+      <text x="164" y="42" fill="#9cd9c0" font-size="23">1 · Admit + recover</text>
+      <text x="164" y="82" fill="#d9e5e9" font-size="21">FA2 SASS → SSA</text>
+      <text x="164" y="115" fill="#d9e5e9" font-size="21">normalize HMMA</text>
+      <text x="164" y="148" fill="#d9e5e9" font-size="21">recover online update</text>
+    </g>
+    <g transform="translate(396 100)" text-anchor="middle">
+      <rect width="328" height="190" rx="12" fill="#152129" stroke="#9cd9c0"/>
+      <text x="164" y="42" fill="#9cd9c0" font-size="23">2 · Construct</text>
+      <text x="164" y="82" fill="#d9e5e9" font-size="21">fresh logical program</text>
+      <text x="164" y="115" fill="#d9e5e9" font-size="21">QK / softmax / PV</text>
+      <text x="164" y="148" fill="#d9e5e9" font-size="21">mask + O/LSE stores</text>
+    </g>
+    <g transform="translate(764 100)" text-anchor="middle">
+      <rect width="328" height="190" rx="12" fill="#152129" stroke="#9cd9c0"/>
+      <text x="164" y="42" fill="#9cd9c0" font-size="23">3 · Overlap</text>
+      <text x="164" y="82" fill="#d9e5e9" font-size="21">QK current</text>
+      <text x="164" y="115" fill="#d9e5e9" font-size="21">PV previous</text>
+      <text x="164" y="148" fill="#d9e5e9" font-size="21">then online rescale</text>
+    </g>
+    <g transform="translate(764 360)" text-anchor="middle">
+      <rect width="328" height="190" rx="12" fill="#152129" stroke="#9cd9c0"/>
+      <text x="164" y="42" fill="#9cd9c0" font-size="23">4 · Map work</text>
+      <text x="164" y="82" fill="#d9e5e9" font-size="21">persistent tickets</text>
+      <text x="164" y="115" fill="#d9e5e9" font-size="21">3 math + 1 producer</text>
+      <text x="164" y="148" fill="#d9e5e9" font-size="21">M192 × N192 tile</text>
+    </g>
+    <g transform="translate(396 360)" text-anchor="middle">
+      <rect width="328" height="190" rx="12" fill="#152129" stroke="#9cd9c0"/>
+      <text x="164" y="42" fill="#9cd9c0" font-size="23">5 · Lower + check</text>
+      <text x="164" y="82" fill="#d9e5e9" font-size="21">TMA + HGMMA</text>
+      <text x="164" y="115" fill="#d9e5e9" font-size="21">register allocation</text>
+      <text x="164" y="148" fill="#d9e5e9" font-size="21">completion + ownership</text>
+    </g>
+    <g transform="translate(28 360)" text-anchor="middle">
+      <rect width="328" height="190" rx="12" fill="#152129" stroke="#9cd9c0"/>
+      <text x="164" y="42" fill="#9cd9c0" font-size="23">6 · Publish</text>
+      <text x="164" y="82" fill="#d9e5e9" font-size="21">all body words new</text>
+      <text x="164" y="115" fill="#d9e5e9" font-size="21">branches + resources</text>
+      <text x="164" y="148" fill="#d9e5e9" font-size="21">image + launch sidecar</text>
+    </g>
+    <g fill="none" stroke="#9cd9c0" stroke-width="2" marker-end="url(#arrow)">
+      <path d="M364,195 H388"/>
+      <path d="M732,195 H756"/>
+      <path d="M928,298 V352"/>
+      <path d="M756,455 H732"/>
+      <path d="M388,455 H364"/>
+    </g>
+    <text x="560" y="586" fill="#98adba" font-size="20" text-anchor="middle">Normalization: N128 source windows. Fresh program: N192.</text>
+  </g>
+</svg>

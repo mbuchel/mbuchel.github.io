@@ -1,322 +1,48 @@
-<!DOCTYPE html><html lang="en"> <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Kernel fusion vs CUDA graphs — sass2mlir — sass2mlir</title><meta name="description" content="How CUDA graphs actually work — capture, instantiation, upload, launch — and the kernel-fusion repertoire sass2mlir applies where graphs stop."><style>:root{--bg: #0b0e14;--panel: #161b22;--border: #30363d;--text: #c9d1d9;--text-strong: #e6edf3;--muted: #8b949e;--accent: #7ee787;--amber: #ffa657;--diff-add: #7ee787;--diff-del: #f78166;--font-mono: ui-monospace, Menlo, Monaco, "Cascadia Code", monospace;--font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;--radius: 8px;--space-1: 4px;--space-2: 8px;--space-3: 16px;--space-4: 24px;--space-5: 40px;--space-6: 64px;--maxw: 820px}*,*:before,*:after{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:var(--bg);color:var(--text);font-family:var(--font-sans);line-height:1.65;font-size:17px;-webkit-font-smoothing:antialiased}.container{max-width:var(--maxw);margin:0 auto;padding:0 var(--space-3)}h1,h2,h3{font-family:var(--font-mono);color:var(--text-strong);line-height:1.25}h1{font-size:2rem}h2{font-size:1.4rem;margin-top:var(--space-6)}h3{font-size:1.1rem}a{color:var(--accent);text-decoration:none}a:hover{text-decoration:underline}p{margin:var(--space-3) 0}code{font-family:var(--font-mono);background:var(--panel);border:1px solid var(--border);border-radius:4px;padding:1px 5px;font-size:.9em}pre{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);padding:var(--space-3);overflow:auto}pre code{background:none;border:none;padding:0}hr{border:none;border-top:1px solid var(--border);margin:var(--space-5) 0}.muted{color:var(--muted)}ul,ol{padding-left:1.3em}li{margin:var(--space-1) 0}table{width:100%;border-collapse:collapse;font-family:var(--font-mono);font-size:.9rem;margin:var(--space-3) 0}th,td{border:1px solid var(--border);padding:7px 11px;text-align:right}th{background:var(--panel);color:var(--muted)}th:first-child,td:first-child{text-align:left}figure img{width:100%;border:1px solid var(--border);border-radius:var(--radius);display:block}
-.back[data-astro-cid-gvpn4u4b]{font-family:var(--font-mono);font-size:.85rem;margin-top:var(--space-4)}.post-footer[data-astro-cid-gvpn4u4b]{margin:var(--space-6) 0;border-top:1px solid var(--border);padding-top:var(--space-3)}.docs[data-astro-cid-o3lm7nac]{display:grid;grid-template-columns:240px minmax(0,1fr);gap:var(--space-5);align-items:start}.sidebar[data-astro-cid-o3lm7nac]{position:sticky;top:var(--space-4);padding-top:var(--space-4);max-height:calc(100vh - var(--space-5));overflow-y:auto}.back[data-astro-cid-o3lm7nac]{font-family:var(--font-mono);font-size:.85rem;margin:0 0 var(--space-2)}.side-title[data-astro-cid-o3lm7nac]{font-family:var(--font-mono);font-weight:700;font-size:1.05rem;margin-bottom:var(--space-3)}.side-title[data-astro-cid-o3lm7nac] a[data-astro-cid-o3lm7nac]{color:var(--text-strong)}.nav-section[data-astro-cid-o3lm7nac]{margin-bottom:var(--space-3)}.nav-section-title[data-astro-cid-o3lm7nac]{font-family:var(--font-mono);font-size:.72rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:var(--space-1)}.sidebar[data-astro-cid-o3lm7nac] ul[data-astro-cid-o3lm7nac]{list-style:none;padding:0;margin:0}.sidebar[data-astro-cid-o3lm7nac] li[data-astro-cid-o3lm7nac]{margin:0}.sidebar[data-astro-cid-o3lm7nac] li[data-astro-cid-o3lm7nac] a[data-astro-cid-o3lm7nac]{display:block;padding:3px var(--space-2);border-left:2px solid var(--border);color:var(--text);font-size:.92rem}.sidebar[data-astro-cid-o3lm7nac] li[data-astro-cid-o3lm7nac] a[data-astro-cid-o3lm7nac]:hover{color:var(--accent);text-decoration:none}.sidebar[data-astro-cid-o3lm7nac] li[data-astro-cid-o3lm7nac] a[data-astro-cid-o3lm7nac].active{border-left-color:var(--accent);color:var(--accent);background:var(--panel)}.content[data-astro-cid-o3lm7nac]{min-width:0;padding-bottom:var(--space-5)}.pager[data-astro-cid-o3lm7nac]{display:flex;justify-content:space-between;gap:var(--space-3);margin-top:var(--space-5);border-top:1px solid var(--border);padding-top:var(--space-3);font-family:var(--font-mono);font-size:.9rem}.post-footer[data-astro-cid-o3lm7nac]{margin:var(--space-4) 0 var(--space-3)}@media(max-width:900px){.docs[data-astro-cid-o3lm7nac]{grid-template-columns:1fr;gap:0}.sidebar[data-astro-cid-o3lm7nac]{position:static;max-height:none;border-bottom:1px solid var(--border);padding-bottom:var(--space-3);margin-bottom:var(--space-3)}.sidebar[data-astro-cid-o3lm7nac] ul[data-astro-cid-o3lm7nac]{display:flex;flex-wrap:wrap;gap:2px var(--space-2)}.sidebar[data-astro-cid-o3lm7nac] li[data-astro-cid-o3lm7nac] a[data-astro-cid-o3lm7nac]{border-left:none;border:1px solid var(--border);border-radius:var(--radius);padding:2px var(--space-2)}.sidebar[data-astro-cid-o3lm7nac] li[data-astro-cid-o3lm7nac] a[data-astro-cid-o3lm7nac].active{border-color:var(--accent)}}
+<!DOCTYPE html><html lang="en"> <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Fusion &amp; CUDA Graphs — sass2mlir</title><meta name="description" content="What the current fusion machinery checks, where geometry stops being proof, and why host launch contracts matter."><style>:root{--bg: #0b0e14;--panel: #161b22;--border: #30363d;--text: #c9d1d9;--text-strong: #e6edf3;--muted: #8b949e;--accent: #7ee787;--amber: #ffa657;--diff-add: #7ee787;--diff-del: #f78166;--font-mono: ui-monospace, Menlo, Monaco, "Cascadia Code", monospace;--font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;--radius: 8px;--space-1: 4px;--space-2: 8px;--space-3: 16px;--space-4: 24px;--space-5: 40px;--space-6: 64px;--maxw: 820px}*,*:before,*:after{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:var(--bg);color:var(--text);font-family:var(--font-sans);line-height:1.65;font-size:17px;-webkit-font-smoothing:antialiased}.container{max-width:var(--maxw);margin:0 auto;padding:0 var(--space-3)}h1,h2,h3{font-family:var(--font-mono);color:var(--text-strong);line-height:1.25}h1{font-size:2rem}h2{font-size:1.4rem;margin-top:var(--space-6)}h3{font-size:1.1rem}a{color:var(--accent);text-decoration:none}a:hover{text-decoration:underline}p{margin:var(--space-3) 0}code{font-family:var(--font-mono);background:var(--panel);border:1px solid var(--border);border-radius:4px;padding:1px 5px;font-size:.9em}pre{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);padding:var(--space-3);overflow:auto}pre code{background:none;border:none;padding:0}hr{border:none;border-top:1px solid var(--border);margin:var(--space-5) 0}.muted{color:var(--muted)}ul,ol{padding-left:1.3em}li{margin:var(--space-1) 0}table{width:100%;border-collapse:collapse;font-family:var(--font-mono);font-size:.9rem;margin:var(--space-3) 0}th,td{border:1px solid var(--border);padding:7px 11px;text-align:right}th{background:var(--panel);color:var(--muted)}th:first-child,td:first-child{text-align:left}figure img{width:100%;border:1px solid var(--border);border-radius:var(--radius);display:block}
+.back[data-astro-cid-gvpn4u4b]{font-family:var(--font-mono);font-size:.85rem;margin-top:var(--space-4)}.post-footer[data-astro-cid-gvpn4u4b]{margin:var(--space-6) 0;border-top:1px solid var(--border);padding-top:var(--space-3)}.skip-link[data-astro-cid-o3lm7nac]{position:absolute;top:-100px;z-index:2;padding:12px;background:var(--panel)}.skip-link[data-astro-cid-o3lm7nac]:focus{top:8px}.docs[data-astro-cid-o3lm7nac]{display:grid;grid-template-columns:240px minmax(0,1fr);gap:var(--space-5);align-items:start}.sidebar[data-astro-cid-o3lm7nac]{position:sticky;top:var(--space-4);padding-top:var(--space-4);max-height:calc(100vh - var(--space-5));overflow-y:auto}.back[data-astro-cid-o3lm7nac]{font-family:var(--font-mono);font-size:.85rem;margin:0 0 var(--space-2)}.side-title[data-astro-cid-o3lm7nac]{font-family:var(--font-mono);font-weight:700;font-size:1.05rem;margin-bottom:var(--space-3)}.side-title[data-astro-cid-o3lm7nac] a[data-astro-cid-o3lm7nac]{color:var(--text-strong)}.nav-section[data-astro-cid-o3lm7nac]{margin-bottom:var(--space-3)}.nav-section-title[data-astro-cid-o3lm7nac]{font-family:var(--font-mono);font-size:.72rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:var(--space-1)}.sidebar[data-astro-cid-o3lm7nac] ul[data-astro-cid-o3lm7nac]{list-style:none;padding:0;margin:0}.sidebar[data-astro-cid-o3lm7nac] li[data-astro-cid-o3lm7nac]{margin:0}.sidebar[data-astro-cid-o3lm7nac] li[data-astro-cid-o3lm7nac] a[data-astro-cid-o3lm7nac]{display:block;padding:3px var(--space-2);border-left:2px solid var(--border);color:var(--text);font-size:.92rem}.sidebar[data-astro-cid-o3lm7nac] li[data-astro-cid-o3lm7nac] a[data-astro-cid-o3lm7nac]:hover{color:var(--accent);text-decoration:none}.sidebar[data-astro-cid-o3lm7nac] li[data-astro-cid-o3lm7nac] a[data-astro-cid-o3lm7nac].active{border-left-color:var(--accent);color:var(--accent);background:var(--panel)}.content[data-astro-cid-o3lm7nac]{min-width:0;padding-bottom:var(--space-5)}.doc-heading[data-astro-cid-o3lm7nac]{padding:48px 0 24px;border-bottom:1px solid var(--border);margin-bottom:32px}.doc-kicker[data-astro-cid-o3lm7nac]{font:.72rem var(--font-mono);color:var(--amber);text-transform:uppercase;letter-spacing:.12em}.doc-heading[data-astro-cid-o3lm7nac] h1[data-astro-cid-o3lm7nac]{font-family:var(--font-sans);font-size:clamp(2rem,4vw,2.8rem);letter-spacing:-.04em;margin:16px 0}.content[data-astro-cid-o3lm7nac] article h2{font-family:var(--font-sans);font-size:1.6rem;letter-spacing:-.025em}.content[data-astro-cid-o3lm7nac] article h3{font-family:var(--font-sans)}.content[data-astro-cid-o3lm7nac] article table{display:block;overflow-x:auto;font-size:.8rem}.content[data-astro-cid-o3lm7nac] article th,.content[data-astro-cid-o3lm7nac] article td{text-align:left}.content[data-astro-cid-o3lm7nac] article code{overflow-wrap:anywhere}.content[data-astro-cid-o3lm7nac] article pre code{overflow-wrap:normal}.content[data-astro-cid-o3lm7nac] .pass-diagram{overflow-x:auto;margin:24px 0}.content[data-astro-cid-o3lm7nac] .pass-diagram img{display:block;width:100%;min-width:760px;height:auto}.content[data-astro-cid-o3lm7nac] a:focus-visible,.sidebar[data-astro-cid-o3lm7nac] a[data-astro-cid-o3lm7nac]:focus-visible{outline:2px solid var(--accent);outline-offset:4px}.pager[data-astro-cid-o3lm7nac]{display:flex;justify-content:space-between;gap:var(--space-3);margin-top:var(--space-5);border-top:1px solid var(--border);padding-top:var(--space-3);font-family:var(--font-mono);font-size:.9rem}.post-footer[data-astro-cid-o3lm7nac]{margin:var(--space-4) 0 var(--space-3)}@media(max-width:900px){.docs[data-astro-cid-o3lm7nac]{grid-template-columns:1fr;gap:0}.sidebar[data-astro-cid-o3lm7nac]{position:static;max-height:220px;border-bottom:1px solid var(--border);padding-bottom:var(--space-3);margin-bottom:var(--space-3)}.doc-heading[data-astro-cid-o3lm7nac]{padding-top:16px}.sidebar[data-astro-cid-o3lm7nac] ul[data-astro-cid-o3lm7nac]{display:flex;flex-wrap:wrap;gap:2px var(--space-2)}.sidebar[data-astro-cid-o3lm7nac] li[data-astro-cid-o3lm7nac] a[data-astro-cid-o3lm7nac]{border-left:none;border:1px solid var(--border);border-radius:var(--radius);padding:2px var(--space-2)}.sidebar[data-astro-cid-o3lm7nac] li[data-astro-cid-o3lm7nac] a[data-astro-cid-o3lm7nac].active{border-color:var(--accent)}}.project-overview{padding:0 20px}.project-overview .skip-link{position:absolute;top:-100px;padding:12px;background:var(--panel);z-index:2}.project-overview .skip-link:focus{top:8px}.project-overview a:focus-visible,.project-overview summary:focus-visible,.project-overview [tabindex]:focus-visible{outline:2px solid var(--accent);outline-offset:5px}.project-nav{display:flex;justify-content:space-between;align-items:center;gap:24px;padding:28px 0;border-bottom:1px solid var(--border);font:.82rem var(--font-mono)}.project-nav .project-home{color:var(--text-strong)}.project-nav .project-home span{color:var(--muted)}.project-nav>div{display:flex;flex-wrap:wrap;gap:24px}.project-nav>div a{color:var(--text)}.project-overview .eyebrow{font:.72rem var(--font-mono);text-transform:uppercase;letter-spacing:.13em;color:var(--amber);margin:0 0 20px}.project-hero{padding:88px 0 56px;max-width:900px}.project-overview h1,.project-overview h2{font-family:var(--font-sans);letter-spacing:-.045em}.project-overview h1{font-size:clamp(2.8rem,6vw,4.8rem);line-height:1.07;margin:0 0 28px;font-weight:650}.project-overview h1 span{color:var(--accent)}.project-overview .hero-description{font-size:1.32rem;line-height:1.6;max-width:750px;color:var(--text-strong)}.project-overview .hero-detail{color:var(--muted);max-width:720px}.hero-actions{display:flex;flex-wrap:wrap;align-items:center;gap:16px 32px;margin-top:32px;font-size:.94rem}.hero-actions a{display:inline-flex;gap:24px;align-items:center}.hero-actions .primary-link{background:var(--accent);color:var(--bg);padding:12px 20px;border-radius:4px;font-weight:650}.encoding-lab-preview{display:grid;grid-template-columns:115px minmax(0,1fr) 115px;align-items:center;gap:24px;background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);padding:24px;margin:0 0 40px}.encoding-lab-preview img{width:100%;height:150px;object-fit:contain}.encoding-lab-preview .eyebrow{margin-bottom:10px}.encoding-lab-preview h2{margin:0;font-size:1.7rem}.encoding-lab-preview p:not(.eyebrow){font-size:.9rem;color:var(--muted);max-width:650px}.encoding-lab-preview .lab-links{display:flex;flex-wrap:wrap;gap:12px 24px}.encoding-lab-preview a{display:inline-block;font-weight:600;margin-top:4px}.result-strip{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));padding:28px 0;border-top:1px solid var(--border);border-bottom:1px solid var(--border)}.result-strip>div{padding:0 24px;border-left:1px solid var(--border)}.result-strip>div:first-child{border-left:0;padding-left:0}.result-strip strong{display:block;color:var(--text-strong);font:2.1rem var(--font-mono);letter-spacing:-.06em}.result-strip span{display:block;font-size:.78rem;color:var(--muted);margin-top:8px}.project-overview .evidence-note{font-size:.78rem;color:var(--muted);margin-top:16px}.overview-section{padding:64px 0;border-bottom:1px solid var(--border);scroll-margin-top:24px}.overview-section>h2{margin:0 0 28px;font-size:clamp(1.9rem,3.4vw,2.65rem);line-height:1.15;font-weight:600}.overview-section>p:not(.eyebrow):not(.section-link){max-width:850px}.overview-section h3{font-family:var(--font-sans);letter-spacing:-.015em;font-size:1.06rem}.reconstruction-figure{margin:36px 0 0}.figure-label{display:flex;justify-content:space-between;font:.67rem var(--font-mono);text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-bottom:12px}.reconstruction-flow{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));list-style:none;padding:0;margin:0;border:1px solid var(--border);border-radius:var(--radius);background:var(--panel)}.reconstruction-flow li{position:relative;margin:0;padding:24px 18px;border-left:1px solid var(--border)}.reconstruction-flow li:first-child{border:0}.reconstruction-flow li+li:before{content:"→";position:absolute;left:-9px;top:28px;background:var(--panel);color:var(--accent)}.step-number{font:.72rem var(--font-mono);color:var(--accent)}.reconstruction-flow h3{margin:18px 0 12px}.reconstruction-flow p{color:var(--muted);font-size:.81rem;line-height:1.6;margin:0}.reconstruction-figure figcaption{font-size:.78rem;color:var(--muted);line-height:1.7;margin-top:16px;max-width:900px}.contract-list{list-style:none;padding:0;margin:32px 0;display:grid;grid-template-columns:1fr 1fr;gap:24px 40px}.contract-list li{margin:0;border-top:1px solid var(--border);padding-top:12px}.contract-list h3{color:var(--text-strong)}.contract-list p{color:var(--muted);font-size:.92rem}.representation-grid{display:grid;grid-template-columns:1fr 1fr;gap:40px;margin:32px 0}.representation-grid>div{border-top:2px solid var(--accent);padding-top:8px}.representation-grid>div+div{border-color:var(--amber)}.representation-grid p{font-size:.94rem}.implementation-note{margin:28px 0;border-left:2px solid var(--accent);padding:20px 28px;background:var(--panel);max-width:850px}.implementation-note .eyebrow{margin-bottom:12px;color:var(--accent)}.implementation-note p:last-child{margin-bottom:0}.section-link{display:flex;flex-wrap:wrap;gap:12px 28px;font-size:.9rem;margin-top:28px}.table-scroll{overflow-x:auto;margin:28px 0}.project-overview .research-table{font-family:var(--font-sans);font-size:.85rem;margin:0;min-width:620px;font-variant-numeric:tabular-nums}.research-table caption{caption-side:bottom;text-align:left;color:var(--muted);padding-top:12px;font-size:.76rem}.project-overview .research-table th,.project-overview .research-table td{border:0;border-bottom:1px solid var(--border);padding:14px 12px;white-space:nowrap}.project-overview .research-table thead th{font-size:.74rem;font-weight:500;background:var(--panel)}.project-overview .research-table tbody th{background:none;font-weight:400;color:var(--text)}.research-table .positive{color:var(--accent)}.research-table .regression{color:var(--diff-del)}.result-details{margin-top:28px;padding:16px 0;border-top:1px solid var(--border);border-bottom:1px solid var(--border)}.result-details summary{cursor:pointer;color:var(--text-strong);font-size:.93rem}.measurement-scope{color:var(--muted);font-size:.85rem;max-width:850px;margin-top:28px}.measurement-scope h3{color:var(--text)}.manual-path{list-style:none;padding:0;margin:32px 0}.manual-path li{display:flex;gap:24px;padding:24px 0;border-top:1px solid var(--border);margin:0}.manual-path li>span{font:.8rem var(--font-mono);color:var(--muted);padding-top:5px}.manual-path a{color:var(--text-strong);font-size:1.1rem;font-weight:550}.manual-path a:hover{color:var(--accent)}.manual-path p{color:var(--muted);font-size:.88rem;margin:6px 0 0}.status-section{border:0}.project-footer{display:flex;flex-wrap:wrap;justify-content:space-between;gap:16px;padding:24px 0 40px;border-top:1px solid var(--border);font:.72rem var(--font-mono);color:var(--muted)}@media(max-width:760px){.project-overview{padding:0 4px}.project-nav{align-items:flex-start;font-size:.75rem}.project-nav>div{justify-content:flex-end;gap:12px 16px}.project-nav .project-home span{display:block;margin-top:6px}.project-hero{padding:56px 0 40px}.encoding-lab-preview{grid-template-columns:64px minmax(0,1fr);gap:16px;padding:20px 16px}.encoding-lab-preview img{height:110px}.encoding-lab-preview img:last-child{display:none}.encoding-lab-preview h2{font-size:1.35rem}.project-overview .hero-description{font-size:1.1rem}.result-strip{grid-template-columns:1fr 1fr;gap:28px 0}.result-strip>div{padding:0 16px}.result-strip>div:nth-child(3){border-left:0;padding-left:0}.result-strip strong{font-size:1.7rem}.overview-section{padding:44px 0}.representation-grid,.contract-list{grid-template-columns:1fr;gap:20px}.reconstruction-flow{grid-template-columns:1fr 1fr}.reconstruction-flow li:nth-child(3){border-left:0}.reconstruction-flow li:nth-child(n+3){border-top:1px solid var(--border)}.reconstruction-flow li:nth-child(3):before{content:"↓";left:18px;top:-12px}.figure-label span+span{display:none}}@media(max-width:420px){.reconstruction-flow{grid-template-columns:1fr}.reconstruction-flow li+li{border-left:0;border-top:1px solid var(--border)}.reconstruction-flow li+li:before{content:"↓";left:18px;top:-12px}}
 </style><style>.section[data-astro-cid-sh445jdo]{margin:var(--space-6) 0}.kicker[data-astro-cid-sh445jdo]{font-family:var(--font-mono);font-size:.75rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
-</style><style>.collapsible[data-astro-cid-hbmamkfo]{border:1px solid var(--border);border-radius:var(--radius);margin:var(--space-3) 0;background:var(--panel)}.collapsible[data-astro-cid-hbmamkfo] summary[data-astro-cid-hbmamkfo]{cursor:pointer;padding:var(--space-3);font-family:var(--font-mono);color:var(--accent);user-select:none}.collapsible[data-astro-cid-hbmamkfo][open] summary[data-astro-cid-hbmamkfo]{border-bottom:1px solid var(--border)}.collapsible-body[data-astro-cid-hbmamkfo]{padding:var(--space-3)}
-</style><style>.metric-table[data-astro-cid-4gds44v2]{width:100%;border-collapse:collapse;font-family:var(--font-mono);font-size:.92rem;margin:var(--space-3) 0}.metric-table[data-astro-cid-4gds44v2] th[data-astro-cid-4gds44v2],.metric-table[data-astro-cid-4gds44v2] td[data-astro-cid-4gds44v2]{border:1px solid var(--border);padding:8px 12px;text-align:right}.metric-table[data-astro-cid-4gds44v2] th[data-astro-cid-4gds44v2]{background:var(--panel);color:var(--muted)}.metric-table[data-astro-cid-4gds44v2] .lbl[data-astro-cid-4gds44v2]{text-align:left}.metric-table[data-astro-cid-4gds44v2] .hl[data-astro-cid-4gds44v2]{color:var(--accent)}
 </style><style>.callout[data-astro-cid-mrmim4ef]{border-left:3px solid var(--amber);background:var(--panel);border-radius:var(--radius);padding:var(--space-3);margin:var(--space-4) 0}.callout-title[data-astro-cid-mrmim4ef]{font-family:var(--font-mono);color:var(--amber);margin-bottom:var(--space-2);font-weight:600}
-</style></head> <body> <main class="container" style="--maxw: 1180px">  <div class="docs" data-astro-cid-o3lm7nac> <aside class="sidebar" data-astro-cid-o3lm7nac> <p class="back" data-astro-cid-o3lm7nac><a href="/" data-astro-cid-o3lm7nac>← projects</a></p> <div class="side-title" data-astro-cid-o3lm7nac><a href="/projects/sass2mlir" data-astro-cid-o3lm7nac>sass2mlir</a></div> <nav data-astro-cid-o3lm7nac> <div class="nav-section" data-astro-cid-o3lm7nac> <div class="nav-section-title" data-astro-cid-o3lm7nac>Getting started</div> <ul data-astro-cid-o3lm7nac> <li data-astro-cid-o3lm7nac> <a href="/projects/sass2mlir" data-astro-cid-o3lm7nac> Overview </a> </li><li data-astro-cid-o3lm7nac> <a href="/projects/sass2mlir/installation" data-astro-cid-o3lm7nac> Installation </a> </li><li data-astro-cid-o3lm7nac> <a href="/projects/sass2mlir/quickstart" data-astro-cid-o3lm7nac> Quickstart </a> </li> </ul> </div><div class="nav-section" data-astro-cid-o3lm7nac> <div class="nav-section-title" data-astro-cid-o3lm7nac>Reference</div> <ul data-astro-cid-o3lm7nac> <li data-astro-cid-o3lm7nac> <a href="/projects/sass2mlir/cli" data-astro-cid-o3lm7nac> CLI reference </a> </li> </ul> </div><div class="nav-section" data-astro-cid-o3lm7nac> <div class="nav-section-title" data-astro-cid-o3lm7nac>Concepts</div> <ul data-astro-cid-o3lm7nac> <li data-astro-cid-o3lm7nac> <a href="/projects/sass2mlir/kernel-fusion" class="active" data-astro-cid-o3lm7nac> Kernel fusion vs CUDA graphs </a> </li> </ul> </div><div class="nav-section" data-astro-cid-o3lm7nac> <div class="nav-section-title" data-astro-cid-o3lm7nac>Project</div> <ul data-astro-cid-o3lm7nac> <li data-astro-cid-o3lm7nac> <a href="/projects/sass2mlir/contributing" data-astro-cid-o3lm7nac> Contributing </a> </li><li data-astro-cid-o3lm7nac> <a href="/projects/sass2mlir/code-style" data-astro-cid-o3lm7nac> Code style </a> </li><li data-astro-cid-o3lm7nac> <a href="/projects/sass2mlir/changelog" data-astro-cid-o3lm7nac> Changelog </a> </li><li data-astro-cid-o3lm7nac> <a href="/projects/sass2mlir/legal" data-astro-cid-o3lm7nac> Legal disclaimer </a> </li> </ul> </div><div class="nav-section" data-astro-cid-o3lm7nac> <div class="nav-section-title" data-astro-cid-o3lm7nac>Examples</div> <ul data-astro-cid-o3lm7nac> <li data-astro-cid-o3lm7nac> <a href="/projects/sass2mlir/examples" data-astro-cid-o3lm7nac> All examples </a> </li><li data-astro-cid-o3lm7nac> <a href="/projects/sass2mlir/examples/dump-and-lift" data-astro-cid-o3lm7nac> Capturing &amp; lifting kernels </a> </li><li data-astro-cid-o3lm7nac> <a href="/projects/sass2mlir/examples/analyses" data-astro-cid-o3lm7nac> CFG, SSA &amp; liveness </a> </li><li data-astro-cid-o3lm7nac> <a href="/projects/sass2mlir/examples/regalloc" data-astro-cid-o3lm7nac> Register allocation </a> </li><li data-astro-cid-o3lm7nac> <a href="/projects/sass2mlir/examples/writing-a-pass" data-astro-cid-o3lm7nac> Writing a pass plugin </a> </li><li data-astro-cid-o3lm7nac> <a href="/projects/sass2mlir/examples/kernel-blacklisting" data-astro-cid-o3lm7nac> Kernel blacklisting </a> </li><li data-astro-cid-o3lm7nac> <a href="/projects/sass2mlir/examples/recompile-flashattention" data-astro-cid-o3lm7nac> Recompiling FlashAttention </a> </li><li data-astro-cid-o3lm7nac> <a href="/projects/sass2mlir/examples/jetson" data-astro-cid-o3lm7nac> On-device: Jetson Orin </a> </li> </ul> </div> </nav> </aside> <div class="content" data-astro-cid-o3lm7nac> <article data-astro-cid-o3lm7nac> <section class="section" data-astro-cid-sh445jdo> <div class="kicker" data-astro-cid-sh445jdo>Concepts</div> <h2 data-astro-cid-sh445jdo>Two answers to the same idle GPU</h2> <p>Small kernels have two costs that have nothing to do with arithmetic: the CPU
-pays launch setup for every kernel it submits, and the GPU drains its pipeline
-between one kernel’s tail and the next kernel’s start. As kernels got faster
-(single-digit microseconds on modern parts), both overheads stayed constant —
-until they <em>were</em> the runtime.</p><p>CUDA graphs and kernel fusion are the two standard answers, and they answer
-different questions:</p><ul>
-<li><strong>CUDA graphs</strong> are a <em>work-submission</em> mechanism. They move the CPU cost to
-a one-time instantiation and let the GPU’s own scheduler walk the dependency
-DAG. The kernels inside are untouched — same cubins, same SASS, same
-grids.</li>
-<li><strong>Kernel fusion</strong> is a <em>compiler</em> transformation. It rewrites the kernels
-themselves into one kernel, so intermediate values never leave the chip and
-the pipeline never drains between stages.</li>
-</ul><p>This page is about the first mechanism in depth — how NVIDIA actually
-implements graphs — because understanding exactly what the graph scheduler does
-(and deliberately does not do) is what defines the gap a SASS-level fusion pass
-works in.</p> </section> 
-<section class="section" data-astro-cid-sh445jdo> <div class="kicker" data-astro-cid-sh445jdo>The object</div> <h2 data-astro-cid-sh445jdo>What a CUDA graph is</h2> <p>A <code>cudaGraph_t</code> is a DAG. An operation is a <strong>node</strong>; a dependency is an
-<strong>edge</strong>. The documented node types: kernel launches, CPU function calls,
-memcpy, memset, empty nodes, event record/wait, external semaphore
-signal/wait, conditional nodes, memory alloc/free nodes, and child graphs
-(nested graphs as single nodes).</p><p>Two properties of edges matter for everything below:</p><ul>
-<li>An edge constrains <em>order</em>, not <em>placement</em>. Once a node’s dependencies
-complete, “scheduling is left up to the CUDA system” — independent branches
-may run concurrently, on whatever SMs and copy engines are free.</li>
-<li>A default edge (edge type 0) is a <strong>full dependency with memory-synchronizing
-behavior</strong>: the downstream node observes complete execution of the upstream
-node, with its memory writes visible. Between two kernel nodes, that is a
-grid-wide barrier plus a memory flush — the same semantics as two kernels on
-one stream.</li>
-</ul><p>CUDA 12.3 added edge data (ports + dependency type), whose one non-default use
-so far is <strong>Programmatic Dependent Launch</strong> — more on that below, since it is
-the only place the “full barrier between kernels” rule bends.</p> </section> 
-<section class="section" data-astro-cid-sh445jdo> <div class="kicker" data-astro-cid-sh445jdo>Definition</div> <h2 data-astro-cid-sh445jdo>Building the DAG: explicit API vs stream capture</h2> <p><strong>The explicit graph API</strong> is what it looks like: <code>cudaGraphCreate</code>, then
-<code>cudaGraphAddNode</code> / <code>cudaGraphAddKernelNode</code> / <code>cudaGraphAddMemcpyNode</code> with
-dependency arrays. Tedious, but exact.</p><p><strong>Stream capture</strong> is how real code gets graphed — including library internals
-the caller never sees. <code>cudaStreamBeginCapture(stream)</code> puts the stream in
-capture mode; from then on, work “launched” into it <strong>does not execute</strong> — it
-is appended to an internal capture graph. <code>cudaStreamEndCapture</code> returns the
-graph:</p><pre class="astro-code github-dark" style="background-color:#24292e;color:#e1e4e8;overflow-x:auto" tabindex="0" data-language="cpp"><code><span class="line"><span style="color:#B392F0">cudaStreamBeginCapture</span><span style="color:#E1E4E8">(stream);</span></span>
-<span class="line"><span style="color:#E1E4E8">kernel_A</span><span style="color:#F97583">&lt;&lt;&lt;</span><span style="color:#E1E4E8">..., stream</span><span style="color:#F97583">&gt;&gt;&gt;</span><span style="color:#E1E4E8">(...);</span><span style="color:#6A737D">   // recorded, not run</span></span>
-<span class="line"><span style="color:#B392F0">libraryCall</span><span style="color:#E1E4E8">(stream);</span><span style="color:#6A737D">              // records whatever it launches</span></span>
-<span class="line"><span style="color:#E1E4E8">kernel_C</span><span style="color:#F97583">&lt;&lt;&lt;</span><span style="color:#E1E4E8">..., stream</span><span style="color:#F97583">&gt;&gt;&gt;</span><span style="color:#E1E4E8">(...);</span></span>
-<span class="line"><span style="color:#B392F0">cudaStreamEndCapture</span><span style="color:#E1E4E8">(stream, </span><span style="color:#F97583">&amp;</span><span style="color:#E1E4E8">graph);</span></span></code></pre><p>Cross-stream fork/join survives capture through events. Recording an event in
-a capturing stream produces a <em>captured event</em> — a handle to the set of nodes
-recorded so far; a <code>cudaStreamWaitEvent</code> on it pulls that stream into the same
-capture graph and adds the dependency edges. The rule that keeps this sane:
-every stream forked out of a capture must be <strong>joined back to the origin
-stream</strong> before <code>cudaStreamEndCapture</code>, or the whole capture fails.</p><details class="collapsible" data-astro-cid-hbmamkfo> <summary data-astro-cid-hbmamkfo>What capture forbids, and why</summary> <div class="collapsible-body" data-astro-cid-hbmamkfo><p>Anything that would create a dependency between captured (not-yet-executing)
-work and real, enqueued work is an error, because CUDA refuses to silently
-drop an ordering the program asked for:</p><ul>
-<li>Synchronizing or querying a capturing stream or captured event — they
-don’t represent scheduled work, so there is nothing to synchronize.</li>
-<li>Using the legacy default stream while any blocking stream in the context is
-capturing (the legacy stream implicitly synchronizes with all of them).</li>
-<li>Synchronous APIs like plain <code>cudaMemcpy</code> — they enqueue to the legacy
-stream <em>and</em> synchronize it.</li>
-<li>Waiting on a non-captured event without <code>cudaEventWaitExternal</code>.</li>
-</ul><p>An invalid operation <strong>invalidates the capture graph</strong>: every stream and
-captured event associated with it errors until <code>cudaStreamEndCapture</code>, which
-then returns a NULL graph. Capture is all-or-nothing by design.</p></div> </details> <p>Whichever path built it, the <code>cudaGraph_t</code> at this point is a <em>template</em> — a
-portable description. Nothing has been validated against the hardware, and
-nothing can run yet.</p> </section> 
-<section class="section" data-astro-cid-sh445jdo> <div class="kicker" data-astro-cid-sh445jdo>Instantiation</div> <h2 data-astro-cid-sh445jdo>Paying the setup cost once</h2> <p><code>cudaGraphInstantiate(&amp;graphExec, graph, ...)</code> turns the template into an
-<strong>executable graph</strong> (<code>cudaGraphExec_t</code>). The programming guide describes the
-contract in one sentence: instantiation “takes a snapshot of the graph
-template, validates it, and performs much of the setup and initialization of
-work with the aim of minimizing what needs to be done at launch.”</p><p>Concretely, this is where everything a per-kernel stream launch would redo
-every time gets done once:</p><ul>
-<li><strong>Validation</strong> — topology checks, node-type restrictions, context/device
-legality.</li>
-<li><strong>Work-description construction</strong> — the launch descriptors for every node
-(kernel image reference, grid/block dims, parameter buffer contents) are
-pre-built instead of assembled per launch.</li>
-<li><strong>Scheduling precomputation</strong> — the topology is analyzed so the device can
-walk it without host involvement; since CUDA 12.0, node <em>creation order</em> is
-used as a scheduling heuristic (earlier-created nodes are preferred), which
-is why node order in well-behaved capture code tends to match intuition.</li>
-<li><strong>Snapshot semantics</strong> — the exec graph is frozen as of instantiation.
-Later edits to the template do nothing to it.</li>
-</ul><p>Instantiation is the dominant one-time cost of adopting graphs. NVIDIA’s own
-microbenchmarks (<a href="https://developer.nvidia.com/blog/constant-time-launch-for-straight-line-cuda-graphs-and-other-performance-enhancements/">CUDA 11.8 vs 12.6</a>):</p><table class="metric-table" data-astro-cid-4gds44v2> <thead data-astro-cid-4gds44v2> <tr data-astro-cid-4gds44v2><th class="lbl" data-astro-cid-4gds44v2>Graph</th><th class data-astro-cid-4gds44v2>Instantiate (11.8)</th><th class data-astro-cid-4gds44v2>Instantiate (12.6)</th><th class data-astro-cid-4gds44v2>Repeat-launch CPU (12.6)</th></tr> </thead> <tbody data-astro-cid-4gds44v2> <tr data-astro-cid-4gds44v2> <td class="lbl " data-astro-cid-4gds44v2>straight-line, 10 kernels</td><td class=" " data-astro-cid-4gds44v2>20 µs</td><td class=" " data-astro-cid-4gds44v2>16 µs</td><td class=" hl" data-astro-cid-4gds44v2>~2.5 µs total</td> </tr><tr data-astro-cid-4gds44v2> <td class="lbl " data-astro-cid-4gds44v2>straight-line, 100 kernels</td><td class=" " data-astro-cid-4gds44v2>168 µs</td><td class=" " data-astro-cid-4gds44v2>127 µs</td><td class=" hl" data-astro-cid-4gds44v2>~2.5 µs total</td> </tr><tr data-astro-cid-4gds44v2> <td class="lbl " data-astro-cid-4gds44v2>straight-line, 1025 kernels</td><td class=" " data-astro-cid-4gds44v2>2143 µs</td><td class=" " data-astro-cid-4gds44v2>1526 µs</td><td class=" hl" data-astro-cid-4gds44v2>~2.5 µs total</td> </tr> </tbody> </table> <p>The right column is the point of the whole mechanism: on Ampere and later,
-re-launching an already-uploaded graph is <strong>constant-time on the CPU</strong> — about
-2.5 µs whether the graph holds ten kernels or a thousand (pre-Ampere stays
-O(n)). Compare with 2 µs + 200 ns <em>per node</em> under CUDA 11.8, and with the
-per-kernel cost of stream launches the graph replaced.</p><p><strong>Upload</strong> is the device-side half: <code>cudaGraphUpload</code> (or the first launch,
-implicitly) stages the instantiated work descriptions onto the GPU. First
-launch is still O(n) on the CPU for exactly this reason; the upload flag and
-explicit call exist so that cost can be moved off the critical path.</p> </section> 
-<section class="section" data-astro-cid-sh445jdo> <div class="kicker" data-astro-cid-sh445jdo>Execution</div> <h2 data-astro-cid-sh445jdo>What the device does with the DAG</h2> <p><code>cudaGraphLaunch(graphExec, stream)</code> submits the whole graph as one item of
-stream work. From there, the host is out of the loop: the GPU front-end walks
-the pre-built topology, and — in NVIDIA’s words — dependencies are “enforced
-with hardware accelerations, instead of relying solely on CUDA streams and
-events, when possible.” Independent branches issue as soon as their inputs are
-ready; dependent nodes wait on device-side completion signaling rather than
-host round-trips.</p><p>What does <strong>not</strong> change is what a kernel node <em>is</em>: an ordinary grid launch
-of an ordinary cubin. Each node carries its own launch configuration, its own
-parameter buffer, its own register allocation and shared-memory plan, baked
-into its SASS long before the graph existed. And each default edge between two
-kernel nodes carries full stream-order semantics: the upstream grid runs to
-completion, its writes are flushed and visible, and only then does the
-downstream grid begin.</p><details class="collapsible" data-astro-cid-hbmamkfo> <summary data-astro-cid-hbmamkfo>Programmatic Dependent Launch: the one bend in the barrier rule</summary> <div class="collapsible-body" data-astro-cid-hbmamkfo><p>CUDA 12.3’s edge data introduced <code>cudaGraphDependencyTypeProgrammatic</code> between
-two kernel nodes — the graph form of programmatic dependent launch (PDL). The
-downstream kernel is allowed to <em>launch early</em>, overlapping its prologue
-(block setup, parameter loads, independent math) with the upstream kernel’s
-execution, and must call <code>cudaGridDependencySynchronize()</code> in device code
-before touching the upstream kernel’s output; the upstream kernel signals
-early with <code>cudaTriggerProgrammaticLaunchCompletion()</code>.</p><p>This is real overlap, and it lives entirely inside the graph execution model —
-but note what it still is: <strong>two separate kernels</strong>, each with its own grid,
-communicating through global memory, synchronized by an explicit device-side
-handshake. It shaves the inter-kernel bubble; it does not fuse anything.</p></div> </details> <p>Later toolkit releases stretched the execution model further, always within
-the same “whole DAG, launched once” frame:</p><ul>
-<li><strong>Conditional nodes</strong> (12.3+) — IF / WHILE / SWITCH nodes whose body is a
-child graph, with the condition value evaluated <em>on the device</em>
-(<code>cudaGraphSetConditional</code> from kernel code). Loops and branches without
-leaving the graph.</li>
-<li><strong>Device graph launch</strong> — a kernel launching an instantiated, uploaded
-graph from the device, enabling device-side schedulers that pick which
-graph runs next with no host involvement.</li>
-</ul> </section> 
-<section class="section" data-astro-cid-sh445jdo> <div class="kicker" data-astro-cid-sh445jdo>Mutation</div> <h2 data-astro-cid-sh445jdo>Living with a frozen graph</h2> <p>The snapshot that makes launch cheap makes change awkward. CUDA’s answer is a
-tiered update story:</p><ul>
-<li><strong>Whole-graph update</strong> — <code>cudaGraphExecUpdate</code> applies parameters from a
-<em>topologically identical</em> template. The pairing of old to new nodes is
-deterministic only under strict ordering rules (same API call order per
-stream, same dependency-array order, consistent sink-node order), so the
-supported pattern is: re-run the exact same capture code, update, and if
-the update is rejected, destroy and re-instantiate.</li>
-<li><strong>Individual node update</strong> — <code>cudaGraphExecKernelNodeSetParams</code> and
-friends patch one node’s parameters (kernel args, copy addresses) in place,
-skipping topology checks. The cheap path when only a few pointers change —
-which in practice is the common case: same network, new tensor addresses.</li>
-<li><strong>Enable/disable</strong> — <code>cudaGraphNodeSetEnabled</code> turns kernel/memcpy/memset
-nodes into empty nodes and back, so one superset graph can be specialized
-per launch.</li>
-</ul><p>What you can never do is change the <em>shape</em>: topology, node types, kernel
-functions, grid geometry — any of those moves and you re-instantiate. A graph
-is a replay device for a fixed computation with retargetable pointers.</p> </section> 
-<section class="section" data-astro-cid-sh445jdo> <div class="kicker" data-astro-cid-sh445jdo>The boundary</div> <h2 data-astro-cid-sh445jdo>What graphs deliberately don&#39;t do</h2> <p>Everything above is launch mechanics. Nothing in the architecture touches the
-kernels themselves — and that is a design decision, not an oversight. The
-graph’s unit of reasoning is the node; a kernel node is an opaque reference to
-a cubin image. Concretely, no matter how the graph is scheduled:</p><ul>
-<li><strong>Intermediate data still round-trips through global memory.</strong> A dependent
-edge means writes flushed and visible; the downstream kernel re-reads them
-from L2/DRAM. There is no mechanism for one node to hand a value to the
-next in registers or shared memory — the nodes never share an SM-resident
-state.</li>
-<li><strong>The pipeline still drains at every dependent edge.</strong> Except for PDL’s
-prologue overlap, node N+1’s blocks start after node N’s blocks finish.
-Ten fused-able stages in a graph still pay nine grid-wide barriers and nine
-memory round-trips; they just stop paying the <em>CPU</em> to schedule them.</li>
-<li><strong>Each node keeps its own resource plan.</strong> Register counts, shared memory,
-occupancy — all per-kernel, all frozen in SASS at <code>ptxas</code> time. Nothing
-reallocates registers across what used to be a kernel boundary, because as
-far as the runtime is concerned there still is one.</li>
-<li><strong>Shapes are frozen.</strong> Grid geometry is baked at capture; retuning it means
-re-capture and re-instantiation.</li>
-</ul><table class="metric-table" data-astro-cid-4gds44v2> <thead data-astro-cid-4gds44v2> <tr data-astro-cid-4gds44v2><th class="lbl" data-astro-cid-4gds44v2></th><th class data-astro-cid-4gds44v2>CUDA graphs</th><th class data-astro-cid-4gds44v2>Kernel fusion</th></tr> </thead> <tbody data-astro-cid-4gds44v2> <tr data-astro-cid-4gds44v2> <td class="lbl " data-astro-cid-4gds44v2>What changes</td><td class=" " data-astro-cid-4gds44v2>how work is submitted</td><td class=" hl" data-astro-cid-4gds44v2>the machine code itself</td> </tr><tr data-astro-cid-4gds44v2> <td class="lbl " data-astro-cid-4gds44v2>CPU launch cost</td><td class=" " data-astro-cid-4gds44v2>paid once at instantiate, ~2.5 µs replay</td><td class=" hl" data-astro-cid-4gds44v2>one kernel, one launch</td> </tr><tr data-astro-cid-4gds44v2> <td class="lbl " data-astro-cid-4gds44v2>Inter-stage data</td><td class=" " data-astro-cid-4gds44v2>global memory round-trip</td><td class=" hl" data-astro-cid-4gds44v2>registers / shared memory</td> </tr><tr data-astro-cid-4gds44v2> <td class="lbl " data-astro-cid-4gds44v2>Inter-stage sync</td><td class=" " data-astro-cid-4gds44v2>grid-wide barrier (PDL: prologue overlap)</td><td class=" hl" data-astro-cid-4gds44v2>bar.sync / mbarrier / named barriers</td> </tr><tr data-astro-cid-4gds44v2> <td class="lbl " data-astro-cid-4gds44v2>Register allocation</td><td class=" " data-astro-cid-4gds44v2>per kernel, frozen</td><td class=" hl" data-astro-cid-4gds44v2>one allocation across the fused whole</td> </tr><tr data-astro-cid-4gds44v2> <td class="lbl " data-astro-cid-4gds44v2>Layer</td><td class=" " data-astro-cid-4gds44v2>driver + hardware scheduler</td><td class=" hl" data-astro-cid-4gds44v2>compiler</td> </tr> </tbody> </table> <p>Graphs answer “the CPU can’t feed the GPU fast enough.” Fusion answers “the
-GPU keeps stopping between stages and spilling intermediates to DRAM.” A real
-workload usually wants both — and the fusion half is exactly where a SASS-level
-toolchain operates, because the fusion decision has to happen to the machine
-code the graph nodes point at.</p> </section> 
-<section class="section" data-astro-cid-sh445jdo> <div class="kicker" data-astro-cid-sh445jdo>sass2mlir</div> <h2 data-astro-cid-sh445jdo>How we fuse kernels</h2> <p>Every technique below was first proven by hand, at Triton source level, in a
-series of megakernel campaigns on Jetson AGX Orin (sm_87) — whole decode
-tokens of Qwen3.5-4B, Nemotron 3 Nano 4B, and Gemma 4 fused into persistent
-kernels or staged CUDA graphs, dropped into stock llama.cpp and vLLM for
-<strong>1.26–1.29×</strong> end-to-end. sass2mlir’s job is to turn each of them from a
-hand-rolled, per-model source hack into a <strong>compiler pass over post-<code>ptxas</code>
-SASS</strong> — applicable to any shipped cubin, with no source and no Python, and
-composable with CUDA graphs: fuse first, then capture the fused result.</p><p>The unit of fusion is always the same move: <strong>delete a grid barrier and move
-the consumer’s math into the producer’s tile loop</strong> — into its epilogue, its
-prologue, or through a counter-based mini-join. What varies is the legality
-argument and the cost model, and that is exactly what a compiler formalizes.</p> </section> 
-<section class="section" data-astro-cid-sh445jdo> <div class="kicker" data-astro-cid-sh445jdo>Repertoire · structure</div> <h2 data-astro-cid-sh445jdo>Fusions that delete stages</h2> <h3 id="epilogue-fusion--the-core-technique">Epilogue fusion — the core technique</h3><p>The producer kernel’s accumulator never touches memory: the consumer’s
-elementwise math (activation, norm, residual add) runs in the same registers,
-in the same instruction stream, right after the final multiply-add. The
-campaign version fused a 4-tap depthwise conv + SiLU into a GEMV epilogue; the
-norm variant factors <code>rstd</code> out as a scalar applied once per output element.</p><p><strong>Legality is an ownership argument</strong>: the epilogue is race-free iff each
-output element is owned by exactly one tile — which is what made conv+SiLU
-safe against an in-place conv-window shift, and what makes the general case
-checkable.</p><p><strong>How sass2mlir enables it:</strong> in the lifted SSA this is mechanical. The pass
-takes two adjacent kernels (adjacency comes from <code>sass2mlir intercept</code>’s
-<code>run.csv</code> or a captured graph), inlines the consumer’s body after the producer’s stores, and
-replaces each consumer <code>LDG</code> of the intermediate with the SSA value feeding
-the producer’s <code>STG</code> — def-use does the wiring. The ownership legality is
-<em>proved</em>, not assumed: uniformity analysis plus address analysis show the
-store and load addresses coincide per-thread and are disjoint across tiles.
-And the campaigns supply the cost model: the prologue-side SwiGLU fusion
-measured <strong>net-negative</strong> because the producer→consumer thread mapping wasn’t
-injective, so every consumer thread re-loaded and re-computed — the pass
-fuses epilogue-side on 1:1 ownership and refuses otherwise.</p><h3 id="counter-based-mini-joins--n-producers-one-consumer-no-barrier">Counter-based mini-joins — N producers, one consumer, no barrier</h3><p>When N tiles produce the slices one consumer stage needs as a whole row, you
-don’t need a grid barrier: each tile <code>ATOM.ADD</code>s a per-group counter as it
-stores (the arrive is the release), and the tile that observes the count reach
-N-1 — the last arriver — loads the full row and runs the consumer math inline.
-Used in the campaigns to fold a gated RMS-norm × SiLU into a DeltaNet
-epilogue (8 tiles per head, self-resetting counters) and to fold a grouped
-norm into the last-arriving head of each group. Each use deletes an entire
-stage <strong>and</strong> its barrier.</p><p><strong>How sass2mlir enables it:</strong> the pattern is recognizable at SASS level —
-producer stores → full barrier → consumer whole-row loads — and the rewrite
-is a counter allocation plus a conditional consumer block predicated on the
-arrive’s return value. It’s a structural pass (like <code>warp-specialization</code>,
-it rewrites control flow rather than peepholing inside it), and the
-release/acquire ordering is small enough to pin down completely in a
-corpus-level test rather than trust by inspection.</p><h3 id="segment-merging--back-to-back-gemvs-as-one-tile-walk">Segment merging — back-to-back GEMVs as one tile walk</h3><p>Several small GEMVs in a row (qkv projections, ffn gate+up) each pay the
-persistent-loop straggler imbalance and each begins every tile iteration with
-a dependent map load (<code>plane</code>, <code>row</code> from a table). The fusion concatenates
-the weight planes into one tile space walked as a single strided loop, and
-decodes <code>(plane, row)</code> <strong>arithmetically</strong> from the tile index — threshold
-compares, bitwise-identical, free. Measured: the map-load form runs at <strong>30
-vs 62 GB/s</strong> and 115 vs 38 regs; the merge itself cut the monolith 240→168
-regs and straggle 9.4%→3.3%.</p><p><strong>How sass2mlir enables it:</strong> two passes. <code>mapload-to-arithmetic</code> finds the
-dependent <code>LDG</code>/<code>LDC</code> at a loop head feeding an address computation — a
-three-node def-use chain in the IR — and replaces it with IMAD/ISETP/LOP3
-threshold decode when the table is piecewise-constant. The kernel-pair merge
-is the same inlining machinery as epilogue fusion, minus the data dependence.</p><h3 id="grid-barrier-synthesis--fusions-enabling-infrastructure">Grid-barrier synthesis — fusion’s enabling infrastructure</h3><p>Every stage-deleting fusion above crosses a grid-wide dependency, so the
-fused kernel needs barriers the source compiler never emitted. The campaign
-protocol, hardened over three models: one <code>ATOM.E.ADD.STRONG.GPU</code> acq_rel
-arrive per CTA, an RMW spin on the same counter, an unconditional trailing
-acquire by <em>everyone including the last arriver</em>, then <code>BAR.SYNC</code> — with
-slots never reused within a token and self-cleaned at the end (~1.1 µs per
-barrier; 257 per token after the barrier diet, down from 321).</p><p><strong>How sass2mlir enables it:</strong> <code>grid-barrier-synth</code> inserts exactly this
-sequence at fusion boundaries — and, critically, enforces the two legality
-rules the campaigns learned from miscompiles: never substitute a
-volatile-load spin for the RMW spin (that variant silently broke at
-321-barrier scale), and every cross-CTA buffer read needs an L2-coherent or
-atomic load, because <strong>L1 is not coherent across SMs</strong>. A SASS-level tool
-audits what actually shipped — the campaigns hit a Triton stack that
-<em>silently dropped</em> <code>.cv</code> cache modifiers, so the source’s intent was not the
-binary’s behavior. The protocol itself is a small concurrent algorithm —
-small enough to reason about completely, and exercised at 321-barrier scale
-in regression.</p> </section> 
-<section class="section" data-astro-cid-sh445jdo> <div class="kicker" data-astro-cid-sh445jdo>Repertoire · arithmetic &amp; memory</div> <h2 data-astro-cid-sh445jdo>Fusions that fix the inner loop</h2> <h3 id="dequant-strength-reduction--i2f--prmt">Dequant strength reduction — I2F → PRMT</h3><p>Q4/int8 weight decode spends its ALU in integer→float conversion, and <code>I2F</code>
-issues at 16/SM/clk — an eighth of the FFMA rate. The replacement is
-bit-exact and all full-rate ops: XOR-bias the bytes (<code>0x80808080</code>), <code>PRMT</code>
-each into the mantissa of 2²³, and an <code>FADD</code> against the magic constant
-recovers the signed value. Verified exact over all 256 int8 values; worth
-1.19→1.30× end-to-end on a 4B model.</p><p><strong>How sass2mlir enables it:</strong> a peephole pass over <code>I2F</code>-on-extracted-quant
-chains — trivially recognizable in the dialect. And “exact for all 256
-values” is a <em>finite</em> claim: the pass is validated by exhaustively checking
-every possible input — the strongest correctness story a compiler transform
-can have, no theorem prover required.</p><h3 id="tiles-in-flight-scheduling--the-u4-gemv-form">Tiles-in-flight scheduling — the u4 GEMV form</h3><p>Keep four weight tiles’ loads in flight before the first reduction, values
-held in bf16 until the multiply. Measured 139→171 GB/s — and <strong>bitwise
-identical</strong>, because the accumulation order never changes: it’s purely an
-instruction-scheduling transformation that buys memory-level parallelism.</p><p><strong>How sass2mlir enables it:</strong> this is the concrete target pattern for the
-instruction-scheduling pass on the roadmap — and because the transform is
-bitwise-identical by construction, the existing <code>crosscheck</code> / byte-diff
-machinery <em>is</em> the oracle. No new verification infrastructure needed.</p><h3 id="load-widening-and-cache-policy">Load widening and cache policy</h3><p>Scalarized <code>LDG.E.U8</code> streams (the signature of struct-field-decode weight
-layouts) widen to <code>LDG.E.64/.128</code> when alignment is provable — worth up to
-3.7× on an affected plane in the campaigns (47→175 GB/s). Single-use weight
-streams want the evict-first policy bit so they don’t thrash L2.</p><p><strong>How sass2mlir enables it:</strong> widening is gated on an alignment <em>proof</em> from
-const-bank offsets and strides — the campaigns’ counter-case (the same hint
-on fp16 scale offsets miscompiled at rel 1.81) is exactly the premise the
-pass must verify. Cache/eviction policy is a control-field attribute edit on
-the IR, the same class of move as the reuse/yield edits — except sass2mlir
-writes the SASS field directly, so it bypasses the toolchain bugs the
-campaigns hit (<code>evict_first</code> + <code>.cg</code> crashing <code>ptxas</code>; <code>.cv</code> silently
-dropped) and only has to encode the <em>hardware’s</em> legality, not the
-compiler’s.</p><h3 id="occupancy-driven-register-allocation">Occupancy-driven register allocation</h3><p>The campaigns’ central law: <strong>spills are nearly free; occupancy is not.</strong> The
-winning configurations were always found by capping registers to reach the
-next co-residency rung — <code>SMs × floor(65536 / (threads × regs))</code> — e.g. 96
-regs/58 spills buying a 5th CTA per SM (70 CTAs on 14 SMs) and the best
-token time, while every “fewer CTAs, spill-free” variant lost.</p><p><strong>How sass2mlir enables it:</strong> the register allocator’s free mode gets the
-co-residency ladder as its cost model — pick the cap that lands on the next
-rung, let it spill. One hard-won legality constraint comes along: an
-aggressive cap that spills ~160 regs/thread through local memory was observed
-to <em>break grid-barrier visibility</em> (run-to-run drift, root-caused to the
-spill regime), so spill placement around spin/barrier regions is a legality
-question, not a cost question.</p> </section> 
-<section class="section" data-astro-cid-sh445jdo> <div class="kicker" data-astro-cid-sh445jdo>Repertoire · overlap</div> <h2 data-astro-cid-sh445jdo>PDL: overlap without fusion (sm_90+)</h2> <p>For the kernel boundaries that <em>shouldn’t</em> be fused — register-incompatible
-stages, or kernels you don’t control — Hopper’s programmatic dependent launch
-is the graph-edge relaxation described above, driven by hand: the producer
-signals <code>GRIDDEPCONTROL.LAUNCH_DEPENDENTS</code> in its epilogue, the consumer
-launches early, runs its independent prologue (weight prefetch doesn’t touch
-the producer’s output), and executes <code>GRIDDEPCONTROL.WAIT</code> only before its
-first dependent load.</p><p><strong>How sass2mlir enables it:</strong> the handshake is two instructions inserted at
-SASS level — <code>pdl-synth</code> finds the consumer’s first load that depends on the
-producer’s output (def-use through the intermediate buffer), puts the WAIT
-there, and puts the signal after the producer’s last store to that buffer.
-The dependent-edge bubble shrinks to a prologue’s worth of overlap while both
-kernels keep their own register budgets. (sm_90 and later only — on sm_87
-the equivalent answer is the fusions above.)</p> </section> 
-<section class="section" data-astro-cid-sh445jdo> <div class="kicker" data-astro-cid-sh445jdo>The verdict</div> <h2 data-astro-cid-sh445jdo>Selective, not monolithic</h2> <p>The campaigns measured both directions, so the design rule is empirical, not
-aesthetic: a fully monolithic megakernel <strong>loses</strong> whenever its stages have
-heterogeneous register demands — Qwen3.5’s monolith pays its fattest stage’s
-252-reg allocation everywhere, lands at 2 CTAs/SM and 57 GB/s, and loses to
-~155 lean kernels in a CUDA graph (24.8 vs 30.4 tok/s) — while Nemotron’s
-monolith <strong>wins</strong> (+28%) because its register budget survived the merge. And
-SASS can’t repeal this: registers-per-thread is fixed per launch, so a fused
-kernel pays max-over-stages no matter how good the allocator is.</p><p>So sass2mlir’s fusion is <strong>selective by construction</strong>:</p><ol>
-<li>Keep the workload as lean staged kernels — the shape that already wins.</li>
-<li>Apply epilogue fusions, mini-joins, and segment merges where the legality
-proofs hold and the fused kernel stays on its occupancy rung.</li>
-<li>Overlap the remaining boundaries with PDL on Hopper-class parts.</li>
-<li>Hand the shrunken sequence back to a CUDA graph — fuse first, capture
-after.</li>
-</ol><p>Delivery reuses what already exists: <code>sass2mlir intercept</code> captures the kernel sequence
-and its launch geometry, the passes fire through <code>sass2mlir apply</code>, and the patched
-cubin drops into the original slot. The campaigns’ interposer shows the
-extreme end of that road — a captured 554-node vLLM decode graph substituted
-at capture time for a one-node graph — but the everyday case is quieter: the
-same graph, fewer nodes, each one the same kernel it was, minus the stages
-that never needed to exist.</p><aside class="callout" data-astro-cid-mrmim4ef> <div class="callout-title" data-astro-cid-mrmim4ef>Correctness gates come along unchanged</div> <div data-astro-cid-mrmim4ef><p>The campaigns’ numerics contract becomes pass legality: a store/load dtype
-boundary is a <strong>rounding point</strong> and must survive fusion (skipping one
-measured 2.4e-2 logits error against 1.7e-7 with it kept), and acceptance is
-the same vector-relative-error / argmax-agreement / bitwise-determinism
-gates, now running as corpus regression instead of per-model harnesses.</p></div> </aside>  </section> 
-<section class="section" data-astro-cid-sh445jdo> <div class="kicker" data-astro-cid-sh445jdo>Sources</div> <h2 data-astro-cid-sh445jdo>References</h2> <ul>
-<li><a href="https://docs.nvidia.com/cuda/cuda-programming-guide/04-special-topics/cuda-graphs.html">CUDA Programming Guide — CUDA Graphs</a>:
-node/edge semantics, stream capture rules, instantiation contract, update
-rules, conditional nodes, graph memory nodes.</li>
-<li><a href="https://developer.nvidia.com/blog/constant-time-launch-for-straight-line-cuda-graphs-and-other-performance-enhancements/">NVIDIA Developer Blog — Constant Time Launch for Straight-Line CUDA Graphs</a>:
-the 11.8 → 12.6 instantiation and launch-overhead measurements quoted above,
-and the node-creation-order scheduling heuristic.</li>
-<li><a href="https://developer.nvidia.com/blog/enabling-dynamic-control-flow-in-cuda-graphs-with-device-graph-launch/">NVIDIA Developer Blog — Enabling Dynamic Control Flow in CUDA Graphs with Device Graph Launch</a>:
-device-side graph instantiation flags, upload, and launch.</li>
-</ul> </section>  </article> <nav class="pager" data-astro-cid-o3lm7nac> <a href="/projects/sass2mlir/cli" data-astro-cid-o3lm7nac>← CLI reference</a> <a href="/projects/sass2mlir/contributing" data-astro-cid-o3lm7nac>Contributing →</a> </nav> <footer class="post-footer" data-astro-cid-o3lm7nac><p class="muted" data-astro-cid-o3lm7nac>2026-07-11</p></footer> </div> </div>  </main> </body></html> 
+</style></head> <body> <main class="container" style="--maxw: 1180px">  <div class="docs" data-astro-cid-o3lm7nac> <a class="skip-link" href="#manual-content" data-astro-cid-o3lm7nac>Skip to chapter</a> <aside class="sidebar" data-astro-cid-o3lm7nac> <p class="back" data-astro-cid-o3lm7nac><a href="/" data-astro-cid-o3lm7nac>← projects</a></p> <div class="side-title" data-astro-cid-o3lm7nac><a href="/projects/sass2mlir" data-astro-cid-o3lm7nac>sass2mlir</a></div> <nav aria-label="sass2mlir manual chapters" data-astro-cid-o3lm7nac> <div class="nav-section" data-astro-cid-o3lm7nac> <div class="nav-section-title" data-astro-cid-o3lm7nac>Start here</div> <ul data-astro-cid-o3lm7nac> <li data-astro-cid-o3lm7nac> <a href="/projects/sass2mlir" data-astro-cid-o3lm7nac> Overview </a> </li><li data-astro-cid-o3lm7nac> <a href="/sass-encoding-lab/" data-astro-cid-o3lm7nac> Open Encoding Lab ↗ </a> </li><li data-astro-cid-o3lm7nac> <a href="/projects/sass2mlir/examples" data-astro-cid-o3lm7nac> Manual &amp; learning path </a> </li><li data-astro-cid-o3lm7nac> <a href="/projects/sass2mlir/installation" data-astro-cid-o3lm7nac> Installation </a> </li><li data-astro-cid-o3lm7nac> <a href="/projects/sass2mlir/quickstart" data-astro-cid-o3lm7nac> Quickstart </a> </li> </ul> </div><div class="nav-section" data-astro-cid-o3lm7nac> <div class="nav-section-title" data-astro-cid-o3lm7nac>Writing passes</div> <ul data-astro-cid-o3lm7nac> <li data-astro-cid-o3lm7nac> <a href="/projects/sass2mlir/contracts" data-astro-cid-o3lm7nac> Compiler contracts &amp; lessons </a> </li><li data-astro-cid-o3lm7nac> <a href="/projects/sass2mlir/examples/analyses" data-astro-cid-o3lm7nac> IR &amp; analysis model </a> </li><li data-astro-cid-o3lm7nac> <a href="/projects/sass2mlir/examples/writing-a-pass" data-astro-cid-o3lm7nac> First pass: FMA contraction </a> </li><li data-astro-cid-o3lm7nac> <a href="/projects/sass2mlir/scheduling" data-astro-cid-o3lm7nac> Scheduling codes &amp; challenges </a> </li><li data-astro-cid-o3lm7nac> <a href="/projects/sass2mlir/examples/regalloc" data-astro-cid-o3lm7nac> Allocation &amp; physical lifetimes </a> </li><li data-astro-cid-o3lm7nac> <a href="/projects/sass2mlir/cli" data-astro-cid-o3lm7nac> CLI reference </a> </li> </ul> </div><div class="nav-section" data-astro-cid-o3lm7nac> <div class="nav-section-title" data-astro-cid-o3lm7nac>Applications</div> <ul data-astro-cid-o3lm7nac> <li data-astro-cid-o3lm7nac> <a href="/projects/sass2mlir/examples/recompile-flashattention" data-astro-cid-o3lm7nac> FlashAttention reconstruction </a> </li><li data-astro-cid-o3lm7nac> <a href="/projects/sass2mlir/examples/dump-and-lift" data-astro-cid-o3lm7nac> Capture &amp; inspect kernels </a> </li><li data-astro-cid-o3lm7nac> <a href="/projects/sass2mlir/examples/jetson" data-astro-cid-o3lm7nac> Jetson &amp; host integration </a> </li><li data-astro-cid-o3lm7nac> <a href="/projects/sass2mlir/kernel-fusion" aria-current="page" class="active" data-astro-cid-o3lm7nac> Fusion &amp; CUDA Graphs </a> </li> </ul> </div><div class="nav-section" data-astro-cid-o3lm7nac> <div class="nav-section-title" data-astro-cid-o3lm7nac>Project</div> <ul data-astro-cid-o3lm7nac> <li data-astro-cid-o3lm7nac> <a href="/projects/sass2mlir/contributing" data-astro-cid-o3lm7nac> Contributing </a> </li><li data-astro-cid-o3lm7nac> <a href="/projects/sass2mlir/code-style" data-astro-cid-o3lm7nac> Code style </a> </li><li data-astro-cid-o3lm7nac> <a href="/projects/sass2mlir/changelog" data-astro-cid-o3lm7nac> Changelog </a> </li><li data-astro-cid-o3lm7nac> <a href="/projects/sass2mlir/legal" data-astro-cid-o3lm7nac> Legal disclaimer </a> </li> </ul> </div> </nav> </aside> <div class="content" id="manual-content" data-astro-cid-o3lm7nac> <header class="doc-heading" data-astro-cid-o3lm7nac> <p class="doc-kicker" data-astro-cid-o3lm7nac>sass2mlir / Manual</p> <h1 data-astro-cid-o3lm7nac>Fusion &amp; CUDA Graphs</h1> <p class="muted" data-astro-cid-o3lm7nac>What the current fusion machinery checks, where geometry stops being proof, and why host launch contracts matter.</p> </header> <article data-astro-cid-o3lm7nac> <section class="section" data-astro-cid-sh445jdo> <div class="kicker" data-astro-cid-sh445jdo>Application boundary</div> <h2 data-astro-cid-sh445jdo>A kernel boundary carries more than launch overhead</h2> <p>Fusion can remove an intermediate memory round trip or a launch. It also removes
+a boundary that separated register ownership, launch geometry, and memory
+visibility. A useful compiler must establish the replacement for each of those
+properties before publishing executable code.</p><p>The current tree has a runtime <code>fuse</code> plugin under <code>passes/fuse/</code>, separate from
+the ordinary <code>sass-mlir optimize --passes ...</code> MLIR stages. Its source includes
+pair analysis, image synthesis, graph inspection, and graph substitution. These
+routes have different admission and host-integration requirements; their presence
+is not a general fusion guarantee or a shared performance result.</p> </section> 
+<section class="section" data-astro-cid-sh445jdo> <div class="kicker" data-astro-cid-sh445jdo>Pair analysis</div> <h2 data-astro-cid-sh445jdo>An elementwise bridge needs the same element</h2> <p>The pair checker first requires matching SM targets and decodable bodies. Its
+elementwise path checks the producer’s output address against the consumer’s
+input address, including their thread-to-element mapping. Unsupported producer
+barriers, shared-memory cooperation, and structural control flow block this
+simple bridge.</p><p>Matching symbolic parameter offsets is not enough to establish that two runtime
+arguments name the same buffer. The launch side must bind the parameters and
+geometry required by the candidate. If synthesis combines parameter reads from
+both bodies, the host must supply that combined parameter layout.</p><p>The write-through pair path retains producer stores and replaces the selected
+consumer load with a register transfer. It still needs register renumbering,
+encoding checks, supported branch layout, and consistent cubin metadata. Image
+rewriting alone cannot arrange the corresponding producer/consumer launches.</p><p>Landmarks: <code>passes/fuse/contracts.cpp</code>, <code>pair_emit.cpp</code>, <code>image.cpp</code>, and
+<code>intercept.cpp</code>.</p> </section> 
+<section class="section" data-astro-cid-sh445jdo> <div class="kicker" data-astro-cid-sh445jdo>Recompute</div> <h2 data-astro-cid-sh445jdo>Address geometry is a diagnostic</h2> <p>The recompute diagnostic compares projected launch-root coefficients and a
+modeled constant-stride induction axis. Within the producer, selected input
+loads must agree with the store’s roots and nonzero induction identity. Across
+separately lifted functions, the first consumer projection is compared after
+renaming that identity.</p><p>It refuses unsupported nonlinear expressions, root-dependent strides, multiple
+uncancelled induction axes, and unproved operand semantics. Projection identities
+belong to an immutable function epoch and cannot be reused after edits.</p><aside class="callout" data-astro-cid-mrmim4ef> <div class="callout-title" data-astro-cid-mrmim4ef>The boundary of the result</div> <div data-astro-cid-mrmim4ef><p>The structural diagnostic does not authorize fusion. It does not establish
+runtime pointer equality, bounded hardware arithmetic, complete consumer address
+correspondence, memory visibility, or numerical equivalence. Its Isabelle model
+proves a tuple-comparison property; C++ implementation and symbolic projection
+remain trusted boundaries.</p></div> </aside> <p>Landmarks: <code>contracts/recompute.cpp</code> and <code>docs/contracts/recompute.md</code>.</p> </section> 
+<section class="section" data-astro-cid-sh445jdo> <div class="kicker" data-astro-cid-sh445jdo>Graph substitution</div> <h2 data-astro-cid-sh445jdo>Publish the device and host changes together</h2> <p>Graph substitution is a launch-side transformation. The plugin matches a walked
+stage list at graph instantiation, builds a replacement, and associates it with
+that execution object. The replacement must retain the original execution’s
+parameter bindings, required ordering, resource limits, and lifetime rules.
+Unsupported stages or missing inputs require refusal.</p><p>Removing a store/load boundary can also remove a rounding point. Reusing memory
+or registers can change asynchronous ownership. A smaller node count therefore
+says nothing by itself about numerical correctness, progress, occupancy, or
+speed. Validate the admitted application and launch contract before timing it.</p><p>The <a href="/projects/sass2mlir#results">FlashAttention study</a> reports native and CUDA
+Graph submission for the reconstructed attention program. Those measurements
+are not evidence that the general fusion plugin is faster or correct for other
+workloads.</p><p>Read <a href="/projects/sass2mlir/contracts">the compiler contracts</a> before extending
+fusion, and <a href="/projects/sass2mlir/cli">the CLI reference</a> for the boundary between
+MLIR optimization stages and runtime plugins.</p> </section>  </article> <nav class="pager" aria-label="Previous and next chapter" data-astro-cid-o3lm7nac> <a href="/projects/sass2mlir/examples/jetson" data-astro-cid-o3lm7nac>← Jetson &amp; host integration</a> <a href="/projects/sass2mlir/contributing" data-astro-cid-o3lm7nac>Contributing →</a> </nav> <footer class="post-footer" data-astro-cid-o3lm7nac><p class="muted" data-astro-cid-o3lm7nac>Updated <time datetime="2026-10-11" data-astro-cid-o3lm7nac>2026-10-11</time> · AGPL-3.0-or-later</p></footer> </div> </div>  </main> </body></html> 

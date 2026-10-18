@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1120 980" role="img" aria-labelledby="title desc">
+  <title id="title">One CTA: one producer, three math warpgroups</title>
+  <desc id="desc">The bundled kernel uses 512 threads: one reserved producer warpgroup and three 128-thread math groups. The shared-memory plan has one Q tile, double K and V stages, and three shared probability bands.</desc>
+  <defs><marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#9cd9c0"/></marker></defs>
+  <rect width="1120" height="980" rx="14" fill="#0d161d"/>
+  <g font-family="system-ui, sans-serif">
+    <text x="28" y="42" fill="#d9e5e9" font-size="26">One CTA: one producer, three math warpgroups</text>
+    <text x="28" y="76" fill="#98adba" font-size="18">Thread roles above; the shared-memory regions they coordinate below.</text>
+    <g transform="translate(28 112)" text-anchor="middle">
+      <rect width="328" height="310" rx="12" fill="#152129" stroke="#9cd9c0"/>
+    <text x="164.0" y="42" fill="#9cd9c0" font-size="23" text-anchor="middle">Producer warpgroup</text>
+    <text x="164.0" y="82" fill="#d9e5e9" font-size="21" text-anchor="middle">128 reserved threads</text>
+    <text x="164.0" y="115" fill="#d9e5e9" font-size="21" text-anchor="middle">32 active / 96 exit</text>
+    <text x="164.0" y="148" fill="#d9e5e9" font-size="21" text-anchor="middle">TMA + stage transactions</text>
+    <text x="164.0" y="181" fill="#d9e5e9" font-size="21" text-anchor="middle">persistent ticket cursor</text>
+    </g>
+    <rect x="396" y="112" width="696" height="310" rx="12" fill="#152129" stroke="#9cd9c0"/>
+    <text x="744" y="154" fill="#9cd9c0" font-size="23" text-anchor="middle">Three math warpgroups · 128 threads each</text>
+    <text x="424" y="211" fill="#9cd9c0" font-size="21" text-anchor="start">Math 0</text>
+    <text x="570" y="211" fill="#d9e5e9" font-size="21" text-anchor="start">TIDs 128–255</text>
+    <text x="818" y="211" fill="#d9e5e9" font-size="21" text-anchor="start">Rows 0–63</text>
+    <text x="424" y="277" fill="#9cd9c0" font-size="21" text-anchor="start">Math 1</text>
+    <text x="570" y="277" fill="#d9e5e9" font-size="21" text-anchor="start">TIDs 256–383</text>
+    <text x="818" y="277" fill="#d9e5e9" font-size="21" text-anchor="start">Rows 64–127</text>
+    <text x="424" y="343" fill="#9cd9c0" font-size="21" text-anchor="start">Math 2</text>
+    <text x="570" y="343" fill="#d9e5e9" font-size="21" text-anchor="start">TIDs 384–511</text>
+    <text x="818" y="343" fill="#d9e5e9" font-size="21" text-anchor="start">Rows 128–191</text>
+    <text x="744" y="393" fill="#98adba" font-size="20" text-anchor="middle">Each group computes QK / PV for 64 query rows.</text>
+    <text x="28" y="482" fill="#efc278" font-size="23" text-anchor="start">Shared-memory plan</text>
+    <g transform="translate(28 508)" text-anchor="middle">
+      <rect width="512" height="150" rx="12" fill="#152129" stroke="#9cd9c0"/>
+    <text x="256.0" y="42" fill="#9cd9c0" font-size="23" text-anchor="middle">Q · 24,576 B</text>
+    <text x="256.0" y="82" fill="#d9e5e9" font-size="21" text-anchor="middle">one M192 × D64 FP16 query tile</text>
+    </g>
+    <g transform="translate(580 508)" text-anchor="middle">
+      <rect width="512" height="150" rx="12" fill="#152129" stroke="#9cd9c0"/>
+    <text x="256.0" y="42" fill="#9cd9c0" font-size="23" text-anchor="middle">K₀ / K₁ · 24,576 B each</text>
+    <text x="256.0" y="82" fill="#d9e5e9" font-size="21" text-anchor="middle">two N192 × D64 stages</text>
+    </g>
+    <g transform="translate(28 694)" text-anchor="middle">
+      <rect width="512" height="150" rx="12" fill="#152129" stroke="#9cd9c0"/>
+    <text x="256.0" y="42" fill="#9cd9c0" font-size="23" text-anchor="middle">V₀ / V₁ · 24,576 B each</text>
+    <text x="256.0" y="82" fill="#d9e5e9" font-size="21" text-anchor="middle">two N192 × D64 stages</text>
+    </g>
+    <g transform="translate(580 694)" text-anchor="middle">
+      <rect width="512" height="150" rx="12" fill="#152129" stroke="#9cd9c0"/>
+    <text x="256.0" y="42" fill="#9cd9c0" font-size="23" text-anchor="middle">P · 73,728 B total</text>
+    <text x="256.0" y="82" fill="#d9e5e9" font-size="21" text-anchor="middle">three M64 × N192 FP16 fragments</text>
+    </g>
+    <text x="560" y="892" fill="#98adba" font-size="21" text-anchor="middle">3 × M64 = M192 rows · N192 keys · D64 head dimension</text>
+    <text x="560" y="928" fill="#98adba" font-size="20" text-anchor="middle">Complete shared allocation: 222,208 B, including O staging,</text>
+    <text x="560" y="958" fill="#98adba" font-size="20" text-anchor="middle">barriers and required alignment gaps.</text>
+  </g>
+</svg>

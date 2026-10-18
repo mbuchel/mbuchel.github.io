@@ -1,0 +1,168 @@
+<!DOCTYPE html><html lang="en"> <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Scheduling codes &amp; challenges — sass2mlir</title><meta name="description" content="How joint issue encodings, physical dependencies, and asynchronous completion constrain SASS passes, with credit to redplait’s machine descriptions and reverse-engineering work."><style>:root{--bg: #0b0e14;--panel: #161b22;--border: #30363d;--text: #c9d1d9;--text-strong: #e6edf3;--muted: #8b949e;--accent: #7ee787;--amber: #ffa657;--diff-add: #7ee787;--diff-del: #f78166;--font-mono: ui-monospace, Menlo, Monaco, "Cascadia Code", monospace;--font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;--radius: 8px;--space-1: 4px;--space-2: 8px;--space-3: 16px;--space-4: 24px;--space-5: 40px;--space-6: 64px;--maxw: 820px}*,*:before,*:after{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:var(--bg);color:var(--text);font-family:var(--font-sans);line-height:1.65;font-size:17px;-webkit-font-smoothing:antialiased}.container{max-width:var(--maxw);margin:0 auto;padding:0 var(--space-3)}h1,h2,h3{font-family:var(--font-mono);color:var(--text-strong);line-height:1.25}h1{font-size:2rem}h2{font-size:1.4rem;margin-top:var(--space-6)}h3{font-size:1.1rem}a{color:var(--accent);text-decoration:none}a:hover{text-decoration:underline}p{margin:var(--space-3) 0}code{font-family:var(--font-mono);background:var(--panel);border:1px solid var(--border);border-radius:4px;padding:1px 5px;font-size:.9em}pre{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);padding:var(--space-3);overflow:auto}pre code{background:none;border:none;padding:0}hr{border:none;border-top:1px solid var(--border);margin:var(--space-5) 0}.muted{color:var(--muted)}ul,ol{padding-left:1.3em}li{margin:var(--space-1) 0}table{width:100%;border-collapse:collapse;font-family:var(--font-mono);font-size:.9rem;margin:var(--space-3) 0}th,td{border:1px solid var(--border);padding:7px 11px;text-align:right}th{background:var(--panel);color:var(--muted)}th:first-child,td:first-child{text-align:left}figure img{width:100%;border:1px solid var(--border);border-radius:var(--radius);display:block}
+.back[data-astro-cid-gvpn4u4b]{font-family:var(--font-mono);font-size:.85rem;margin-top:var(--space-4)}.post-footer[data-astro-cid-gvpn4u4b]{margin:var(--space-6) 0;border-top:1px solid var(--border);padding-top:var(--space-3)}.skip-link[data-astro-cid-o3lm7nac]{position:absolute;top:-100px;z-index:2;padding:12px;background:var(--panel)}.skip-link[data-astro-cid-o3lm7nac]:focus{top:8px}.docs[data-astro-cid-o3lm7nac]{display:grid;grid-template-columns:240px minmax(0,1fr);gap:var(--space-5);align-items:start}.sidebar[data-astro-cid-o3lm7nac]{position:sticky;top:var(--space-4);padding-top:var(--space-4);max-height:calc(100vh - var(--space-5));overflow-y:auto}.back[data-astro-cid-o3lm7nac]{font-family:var(--font-mono);font-size:.85rem;margin:0 0 var(--space-2)}.side-title[data-astro-cid-o3lm7nac]{font-family:var(--font-mono);font-weight:700;font-size:1.05rem;margin-bottom:var(--space-3)}.side-title[data-astro-cid-o3lm7nac] a[data-astro-cid-o3lm7nac]{color:var(--text-strong)}.nav-section[data-astro-cid-o3lm7nac]{margin-bottom:var(--space-3)}.nav-section-title[data-astro-cid-o3lm7nac]{font-family:var(--font-mono);font-size:.72rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:var(--space-1)}.sidebar[data-astro-cid-o3lm7nac] ul[data-astro-cid-o3lm7nac]{list-style:none;padding:0;margin:0}.sidebar[data-astro-cid-o3lm7nac] li[data-astro-cid-o3lm7nac]{margin:0}.sidebar[data-astro-cid-o3lm7nac] li[data-astro-cid-o3lm7nac] a[data-astro-cid-o3lm7nac]{display:block;padding:3px var(--space-2);border-left:2px solid var(--border);color:var(--text);font-size:.92rem}.sidebar[data-astro-cid-o3lm7nac] li[data-astro-cid-o3lm7nac] a[data-astro-cid-o3lm7nac]:hover{color:var(--accent);text-decoration:none}.sidebar[data-astro-cid-o3lm7nac] li[data-astro-cid-o3lm7nac] a[data-astro-cid-o3lm7nac].active{border-left-color:var(--accent);color:var(--accent);background:var(--panel)}.content[data-astro-cid-o3lm7nac]{min-width:0;padding-bottom:var(--space-5)}.doc-heading[data-astro-cid-o3lm7nac]{padding:48px 0 24px;border-bottom:1px solid var(--border);margin-bottom:32px}.doc-kicker[data-astro-cid-o3lm7nac]{font:.72rem var(--font-mono);color:var(--amber);text-transform:uppercase;letter-spacing:.12em}.doc-heading[data-astro-cid-o3lm7nac] h1[data-astro-cid-o3lm7nac]{font-family:var(--font-sans);font-size:clamp(2rem,4vw,2.8rem);letter-spacing:-.04em;margin:16px 0}.content[data-astro-cid-o3lm7nac] article h2{font-family:var(--font-sans);font-size:1.6rem;letter-spacing:-.025em}.content[data-astro-cid-o3lm7nac] article h3{font-family:var(--font-sans)}.content[data-astro-cid-o3lm7nac] article table{display:block;overflow-x:auto;font-size:.8rem}.content[data-astro-cid-o3lm7nac] article th,.content[data-astro-cid-o3lm7nac] article td{text-align:left}.content[data-astro-cid-o3lm7nac] article code{overflow-wrap:anywhere}.content[data-astro-cid-o3lm7nac] article pre code{overflow-wrap:normal}.content[data-astro-cid-o3lm7nac] .pass-diagram{overflow-x:auto;margin:24px 0}.content[data-astro-cid-o3lm7nac] .pass-diagram img{display:block;width:100%;min-width:760px;height:auto}.content[data-astro-cid-o3lm7nac] a:focus-visible,.sidebar[data-astro-cid-o3lm7nac] a[data-astro-cid-o3lm7nac]:focus-visible{outline:2px solid var(--accent);outline-offset:4px}.pager[data-astro-cid-o3lm7nac]{display:flex;justify-content:space-between;gap:var(--space-3);margin-top:var(--space-5);border-top:1px solid var(--border);padding-top:var(--space-3);font-family:var(--font-mono);font-size:.9rem}.post-footer[data-astro-cid-o3lm7nac]{margin:var(--space-4) 0 var(--space-3)}@media(max-width:900px){.docs[data-astro-cid-o3lm7nac]{grid-template-columns:1fr;gap:0}.sidebar[data-astro-cid-o3lm7nac]{position:static;max-height:220px;border-bottom:1px solid var(--border);padding-bottom:var(--space-3);margin-bottom:var(--space-3)}.doc-heading[data-astro-cid-o3lm7nac]{padding-top:16px}.sidebar[data-astro-cid-o3lm7nac] ul[data-astro-cid-o3lm7nac]{display:flex;flex-wrap:wrap;gap:2px var(--space-2)}.sidebar[data-astro-cid-o3lm7nac] li[data-astro-cid-o3lm7nac] a[data-astro-cid-o3lm7nac]{border-left:none;border:1px solid var(--border);border-radius:var(--radius);padding:2px var(--space-2)}.sidebar[data-astro-cid-o3lm7nac] li[data-astro-cid-o3lm7nac] a[data-astro-cid-o3lm7nac].active{border-color:var(--accent)}}.project-overview{padding:0 20px}.project-overview .skip-link{position:absolute;top:-100px;padding:12px;background:var(--panel);z-index:2}.project-overview .skip-link:focus{top:8px}.project-overview a:focus-visible,.project-overview summary:focus-visible,.project-overview [tabindex]:focus-visible{outline:2px solid var(--accent);outline-offset:5px}.project-nav{display:flex;justify-content:space-between;align-items:center;gap:24px;padding:28px 0;border-bottom:1px solid var(--border);font:.82rem var(--font-mono)}.project-nav .project-home{color:var(--text-strong)}.project-nav .project-home span{color:var(--muted)}.project-nav>div{display:flex;flex-wrap:wrap;gap:24px}.project-nav>div a{color:var(--text)}.project-overview .eyebrow{font:.72rem var(--font-mono);text-transform:uppercase;letter-spacing:.13em;color:var(--amber);margin:0 0 20px}.project-hero{padding:88px 0 56px;max-width:900px}.project-overview h1,.project-overview h2{font-family:var(--font-sans);letter-spacing:-.045em}.project-overview h1{font-size:clamp(2.8rem,6vw,4.8rem);line-height:1.07;margin:0 0 28px;font-weight:650}.project-overview h1 span{color:var(--accent)}.project-overview .hero-description{font-size:1.32rem;line-height:1.6;max-width:750px;color:var(--text-strong)}.project-overview .hero-detail{color:var(--muted);max-width:720px}.hero-actions{display:flex;flex-wrap:wrap;align-items:center;gap:16px 32px;margin-top:32px;font-size:.94rem}.hero-actions a{display:inline-flex;gap:24px;align-items:center}.hero-actions .primary-link{background:var(--accent);color:var(--bg);padding:12px 20px;border-radius:4px;font-weight:650}.encoding-lab-preview{display:grid;grid-template-columns:115px minmax(0,1fr) 115px;align-items:center;gap:24px;background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);padding:24px;margin:0 0 40px}.encoding-lab-preview img{width:100%;height:150px;object-fit:contain}.encoding-lab-preview .eyebrow{margin-bottom:10px}.encoding-lab-preview h2{margin:0;font-size:1.7rem}.encoding-lab-preview p:not(.eyebrow){font-size:.9rem;color:var(--muted);max-width:650px}.encoding-lab-preview .lab-links{display:flex;flex-wrap:wrap;gap:12px 24px}.encoding-lab-preview a{display:inline-block;font-weight:600;margin-top:4px}.result-strip{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));padding:28px 0;border-top:1px solid var(--border);border-bottom:1px solid var(--border)}.result-strip>div{padding:0 24px;border-left:1px solid var(--border)}.result-strip>div:first-child{border-left:0;padding-left:0}.result-strip strong{display:block;color:var(--text-strong);font:2.1rem var(--font-mono);letter-spacing:-.06em}.result-strip span{display:block;font-size:.78rem;color:var(--muted);margin-top:8px}.project-overview .evidence-note{font-size:.78rem;color:var(--muted);margin-top:16px}.overview-section{padding:64px 0;border-bottom:1px solid var(--border);scroll-margin-top:24px}.overview-section>h2{margin:0 0 28px;font-size:clamp(1.9rem,3.4vw,2.65rem);line-height:1.15;font-weight:600}.overview-section>p:not(.eyebrow):not(.section-link){max-width:850px}.overview-section h3{font-family:var(--font-sans);letter-spacing:-.015em;font-size:1.06rem}.reconstruction-figure{margin:36px 0 0}.figure-label{display:flex;justify-content:space-between;font:.67rem var(--font-mono);text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-bottom:12px}.reconstruction-flow{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));list-style:none;padding:0;margin:0;border:1px solid var(--border);border-radius:var(--radius);background:var(--panel)}.reconstruction-flow li{position:relative;margin:0;padding:24px 18px;border-left:1px solid var(--border)}.reconstruction-flow li:first-child{border:0}.reconstruction-flow li+li:before{content:"→";position:absolute;left:-9px;top:28px;background:var(--panel);color:var(--accent)}.step-number{font:.72rem var(--font-mono);color:var(--accent)}.reconstruction-flow h3{margin:18px 0 12px}.reconstruction-flow p{color:var(--muted);font-size:.81rem;line-height:1.6;margin:0}.reconstruction-figure figcaption{font-size:.78rem;color:var(--muted);line-height:1.7;margin-top:16px;max-width:900px}.contract-list{list-style:none;padding:0;margin:32px 0;display:grid;grid-template-columns:1fr 1fr;gap:24px 40px}.contract-list li{margin:0;border-top:1px solid var(--border);padding-top:12px}.contract-list h3{color:var(--text-strong)}.contract-list p{color:var(--muted);font-size:.92rem}.representation-grid{display:grid;grid-template-columns:1fr 1fr;gap:40px;margin:32px 0}.representation-grid>div{border-top:2px solid var(--accent);padding-top:8px}.representation-grid>div+div{border-color:var(--amber)}.representation-grid p{font-size:.94rem}.implementation-note{margin:28px 0;border-left:2px solid var(--accent);padding:20px 28px;background:var(--panel);max-width:850px}.implementation-note .eyebrow{margin-bottom:12px;color:var(--accent)}.implementation-note p:last-child{margin-bottom:0}.section-link{display:flex;flex-wrap:wrap;gap:12px 28px;font-size:.9rem;margin-top:28px}.table-scroll{overflow-x:auto;margin:28px 0}.project-overview .research-table{font-family:var(--font-sans);font-size:.85rem;margin:0;min-width:620px;font-variant-numeric:tabular-nums}.research-table caption{caption-side:bottom;text-align:left;color:var(--muted);padding-top:12px;font-size:.76rem}.project-overview .research-table th,.project-overview .research-table td{border:0;border-bottom:1px solid var(--border);padding:14px 12px;white-space:nowrap}.project-overview .research-table thead th{font-size:.74rem;font-weight:500;background:var(--panel)}.project-overview .research-table tbody th{background:none;font-weight:400;color:var(--text)}.research-table .positive{color:var(--accent)}.research-table .regression{color:var(--diff-del)}.result-details{margin-top:28px;padding:16px 0;border-top:1px solid var(--border);border-bottom:1px solid var(--border)}.result-details summary{cursor:pointer;color:var(--text-strong);font-size:.93rem}.measurement-scope{color:var(--muted);font-size:.85rem;max-width:850px;margin-top:28px}.measurement-scope h3{color:var(--text)}.manual-path{list-style:none;padding:0;margin:32px 0}.manual-path li{display:flex;gap:24px;padding:24px 0;border-top:1px solid var(--border);margin:0}.manual-path li>span{font:.8rem var(--font-mono);color:var(--muted);padding-top:5px}.manual-path a{color:var(--text-strong);font-size:1.1rem;font-weight:550}.manual-path a:hover{color:var(--accent)}.manual-path p{color:var(--muted);font-size:.88rem;margin:6px 0 0}.status-section{border:0}.project-footer{display:flex;flex-wrap:wrap;justify-content:space-between;gap:16px;padding:24px 0 40px;border-top:1px solid var(--border);font:.72rem var(--font-mono);color:var(--muted)}@media(max-width:760px){.project-overview{padding:0 4px}.project-nav{align-items:flex-start;font-size:.75rem}.project-nav>div{justify-content:flex-end;gap:12px 16px}.project-nav .project-home span{display:block;margin-top:6px}.project-hero{padding:56px 0 40px}.encoding-lab-preview{grid-template-columns:64px minmax(0,1fr);gap:16px;padding:20px 16px}.encoding-lab-preview img{height:110px}.encoding-lab-preview img:last-child{display:none}.encoding-lab-preview h2{font-size:1.35rem}.project-overview .hero-description{font-size:1.1rem}.result-strip{grid-template-columns:1fr 1fr;gap:28px 0}.result-strip>div{padding:0 16px}.result-strip>div:nth-child(3){border-left:0;padding-left:0}.result-strip strong{font-size:1.7rem}.overview-section{padding:44px 0}.representation-grid,.contract-list{grid-template-columns:1fr;gap:20px}.reconstruction-flow{grid-template-columns:1fr 1fr}.reconstruction-flow li:nth-child(3){border-left:0}.reconstruction-flow li:nth-child(n+3){border-top:1px solid var(--border)}.reconstruction-flow li:nth-child(3):before{content:"↓";left:18px;top:-12px}.figure-label span+span{display:none}}@media(max-width:420px){.reconstruction-flow{grid-template-columns:1fr}.reconstruction-flow li+li{border-left:0;border-top:1px solid var(--border)}.reconstruction-flow li+li:before{content:"↓";left:18px;top:-12px}}
+</style></head> <body> <main class="container" style="--maxw: 1180px">  <div class="docs" data-astro-cid-o3lm7nac> <a class="skip-link" href="#manual-content" data-astro-cid-o3lm7nac>Skip to chapter</a> <aside class="sidebar" data-astro-cid-o3lm7nac> <p class="back" data-astro-cid-o3lm7nac><a href="/" data-astro-cid-o3lm7nac>← projects</a></p> <div class="side-title" data-astro-cid-o3lm7nac><a href="/projects/sass2mlir" data-astro-cid-o3lm7nac>sass2mlir</a></div> <nav aria-label="sass2mlir manual chapters" data-astro-cid-o3lm7nac> <div class="nav-section" data-astro-cid-o3lm7nac> <div class="nav-section-title" data-astro-cid-o3lm7nac>Start here</div> <ul data-astro-cid-o3lm7nac> <li data-astro-cid-o3lm7nac> <a href="/projects/sass2mlir" data-astro-cid-o3lm7nac> Overview </a> </li><li data-astro-cid-o3lm7nac> <a href="/sass-encoding-lab/" data-astro-cid-o3lm7nac> Open Encoding Lab ↗ </a> </li><li data-astro-cid-o3lm7nac> <a href="/projects/sass2mlir/examples" data-astro-cid-o3lm7nac> Manual &amp; learning path </a> </li><li data-astro-cid-o3lm7nac> <a href="/projects/sass2mlir/installation" data-astro-cid-o3lm7nac> Installation </a> </li><li data-astro-cid-o3lm7nac> <a href="/projects/sass2mlir/quickstart" data-astro-cid-o3lm7nac> Quickstart </a> </li> </ul> </div><div class="nav-section" data-astro-cid-o3lm7nac> <div class="nav-section-title" data-astro-cid-o3lm7nac>Writing passes</div> <ul data-astro-cid-o3lm7nac> <li data-astro-cid-o3lm7nac> <a href="/projects/sass2mlir/contracts" data-astro-cid-o3lm7nac> Compiler contracts &amp; lessons </a> </li><li data-astro-cid-o3lm7nac> <a href="/projects/sass2mlir/examples/analyses" data-astro-cid-o3lm7nac> IR &amp; analysis model </a> </li><li data-astro-cid-o3lm7nac> <a href="/projects/sass2mlir/examples/writing-a-pass" data-astro-cid-o3lm7nac> First pass: FMA contraction </a> </li><li data-astro-cid-o3lm7nac> <a href="/projects/sass2mlir/scheduling" aria-current="page" class="active" data-astro-cid-o3lm7nac> Scheduling codes &amp; challenges </a> </li><li data-astro-cid-o3lm7nac> <a href="/projects/sass2mlir/examples/regalloc" data-astro-cid-o3lm7nac> Allocation &amp; physical lifetimes </a> </li><li data-astro-cid-o3lm7nac> <a href="/projects/sass2mlir/cli" data-astro-cid-o3lm7nac> CLI reference </a> </li> </ul> </div><div class="nav-section" data-astro-cid-o3lm7nac> <div class="nav-section-title" data-astro-cid-o3lm7nac>Applications</div> <ul data-astro-cid-o3lm7nac> <li data-astro-cid-o3lm7nac> <a href="/projects/sass2mlir/examples/recompile-flashattention" data-astro-cid-o3lm7nac> FlashAttention reconstruction </a> </li><li data-astro-cid-o3lm7nac> <a href="/projects/sass2mlir/examples/dump-and-lift" data-astro-cid-o3lm7nac> Capture &amp; inspect kernels </a> </li><li data-astro-cid-o3lm7nac> <a href="/projects/sass2mlir/examples/jetson" data-astro-cid-o3lm7nac> Jetson &amp; host integration </a> </li><li data-astro-cid-o3lm7nac> <a href="/projects/sass2mlir/kernel-fusion" data-astro-cid-o3lm7nac> Fusion &amp; CUDA Graphs </a> </li> </ul> </div><div class="nav-section" data-astro-cid-o3lm7nac> <div class="nav-section-title" data-astro-cid-o3lm7nac>Project</div> <ul data-astro-cid-o3lm7nac> <li data-astro-cid-o3lm7nac> <a href="/projects/sass2mlir/contributing" data-astro-cid-o3lm7nac> Contributing </a> </li><li data-astro-cid-o3lm7nac> <a href="/projects/sass2mlir/code-style" data-astro-cid-o3lm7nac> Code style </a> </li><li data-astro-cid-o3lm7nac> <a href="/projects/sass2mlir/changelog" data-astro-cid-o3lm7nac> Changelog </a> </li><li data-astro-cid-o3lm7nac> <a href="/projects/sass2mlir/legal" data-astro-cid-o3lm7nac> Legal disclaimer </a> </li> </ul> </div> </nav> </aside> <div class="content" id="manual-content" data-astro-cid-o3lm7nac> <header class="doc-heading" data-astro-cid-o3lm7nac> <p class="doc-kicker" data-astro-cid-o3lm7nac>sass2mlir / Manual</p> <h1 data-astro-cid-o3lm7nac>Scheduling codes &amp; challenges</h1> <p class="muted" data-astro-cid-o3lm7nac>How joint issue encodings, physical dependencies, and asynchronous completion constrain SASS passes, with credit to redplait’s machine descriptions and reverse-engineering work.</p> </header> <article data-astro-cid-o3lm7nac> <h2 id="three-questions-every-schedule-must-answer">Three questions every schedule must answer</h2>
+<p>A pass that changes instructions must answer three separate questions: <strong>is the encoding legal for this exact form, are the dependencies accounted for, and does the resulting program execute correctly?</strong> Round-trip identity, a clean scoreboard, and plausible disassembly each check part of that contract. None replaces the other checks.</p>
+<p>This chapter explains the controls exposed by the current implementation and the gaps a pass author must handle. The concrete encoding observations below concern inspected SM86, SM90, and SM120 descriptions; the experimental scalar scheduler has a narrower Hopper admission policy.</p>
+<h2 id="credit-redplaits-work-is-part-of-the-foundation">Credit: redplait’s work is part of the foundation</h2>
+<p>Our scheduling work builds on <strong>redplait’s <code>denvdis</code> machine descriptions and blog analyses of NVIDIA SASS control fields and dependency models</strong>. The investigation uses his named scheduling states, form-specific joint encoding tables, and separate result, input-hold, output, and resource constraints. These informed our representation, exposed missing field preservation, and supplied constraints for the bounded scheduling policy.</p>
+<p>The retained upstream snapshot is revision <code>22bc333a4e2a5283b1a56ef7cd222fb91d5d84cd</code>. Relevant sources are:</p>
+<ul>
+<li><a href="https://redplait.blogspot.com/2025/05/nvidia-sass-assembler.html">SASS assembler</a>: explains why batch and issue fields must select a valid row together.</li>
+<li><a href="https://redplait.blogspot.com/2025/06/nvdisasm-sass-parser.html">nvdisasm SASS parser</a>: motivates preserving fields beyond ordinary assembly text.</li>
+<li><a href="https://redplait.blogspot.com/2025/11/sass-latency-table-instructions.html">SASS latency tables and instruction reordering</a>: examines the dependency model and the difficulty of matching compiler scheduling.</li>
+<li><a href="https://github.com/redplait/denvdis/blob/22bc333a4e2a5283b1a56ef7cd222fb91d5d84cd/data12/sm90_1.txt">Pinned SM90 encoding description</a> and <a href="https://github.com/redplait/denvdis/blob/22bc333a4e2a5283b1a56ef7cd222fb91d5d84cd/data12/sm90_2.txt">dependency/resource description</a>, alongside the corresponding SM86 and SM120 descriptions.</li>
+</ul>
+<p>sass2mlir combines that foundation with independent instruction-word witnesses, native-library dependency observations, physical completion tracking, compiler checks, and numerical GPU experiments. Model distances are hypotheses and planning constraints; they are not universal measured cycle guarantees.</p>
+<p>Try the <a href="/sass-encoding-lab/">Encoding Lab</a> to compare raw words and inspect
+fields alongside these examples. Its browser decoder and MLIR projection are
+experimental; changing a bit never executes GPU code or proves schedule legality.</p>
+<h2 id="1-physical-slices-are-not-independent-controls">1. Physical slices are not independent controls</h2>
+<p>The IR records a schedule resembling this illustrative attribute:</p>
+<pre class="astro-code github-dark" style="background-color:#24292e;color:#e1e4e8;overflow-x:auto" tabindex="0" data-language="plaintext"><code><span class="line"><span>#sass.sched&lt;stall = 1, yield = true,</span></span>
+<span class="line"><span>  wbar = 7, rbar = 7, watdb = 2,</span></span>
+<span class="line"><span>  reuse = 0, rsv = 0, pm = 0&gt;</span></span></code></pre>
+<p>The names expose physical slices. Their interpretation depends on the instruction form.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Field or view</th><th>What a pass must account for</th></tr></thead><tbody><tr><td><code>stall</code> + <code>yield</code></td><td>Together represent the five-bit USCHED issue/group code. The field named <code>yield</code> is its upper bit.</td></tr><tr><td><code>reuse</code> + batch + USCHED</td><td>Participate in a form-specific joint <code>opex</code> table; copying one slice can change another meaning.</td></tr><tr><td><code>wbar</code>, <code>rbar</code>, <code>watdb</code></td><td>Describe scoreboard posts and waits. Their dependencies must remain valid when instructions move or disappear.</td></tr><tr><td><code>pm</code></td><td>A separate two-bit slice at absolute bits 102–103, named PMN/PM1/PM2/PM3 in the inspected descriptions. Its full hardware effect is unresolved here.</td></tr><tr><td>Encoder ownership</td><td>Some operand extensions overlap the nominal control window. Regeneration must respect the matched form’s owned bits.</td></tr></tbody></table>
+<p>PM is separate from the ordinary <code>@P</code> guard. Its name does not justify treating it as a predicate SSA value. Opaque bits and unrecognized combinations require preservation or refusal.</p>
+<h3 id="w1-and-w1eg-have-different-codes">W1 and W1EG have different codes</h3>
+<p>The inspected descriptions name these USCHED families:</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Low five-bit code</th><th>Name</th><th>Consequence</th></tr></thead><tbody><tr><td>0</td><td>DRAIN</td><td>A distinct named issue state.</td></tr><tr><td>1–15</td><td>W1EG–W15EG</td><td>End-group family.</td></tr><tr><td>17–27</td><td>W1–W11</td><td>Continuation family.</td></tr><tr><td>16, 28–31</td><td>Absent from inspected tables</td><td>A field-width check alone can accept an undefined code.</td></tr></tbody></table>
+<p>For example, <code>stall=1, yield=false</code> gives code 1, W1EG. Setting <code>yield=true</code> gives code 17, W1. Setting <code>stall=15, yield=true</code> produces code 31, which is absent from those tables. Treating <code>yield</code> as an independent “switch warps” flag misses this coupling. These names distinguish issue states; they do not by themselves establish elapsed delays or warp-switch behavior.</p>
+<h2 id="2-select-the-instruction-form-before-the-joint-code">2. Select the instruction form before the joint code</h2>
+<p>The <code>opex</code> key gathers bits 109:105 and 124:122. Its table combines issue/group, batch, and form-dependent reuse information. redplait’s assembler article demonstrates the practical consequence: individually acceptable field values can still have no valid joint row.</p>
+<p>In our retained SM90 witnesses, <strong>the same <code>opex=0x31</code> has two meanings</strong>:</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Instruction form</th><th>Interpretation in the matched table</th></tr></thead><tbody><tr><td><code>S2R</code></td><td>Batch start + W1</td></tr><tr><td>Immediate <code>ISETP</code></td><td>Source-A reuse + batch NOP + W1</td></tr></tbody></table>
+<p>Even the full opcode can be insufficient. SM90 <code>F2FP</code> opcode <code>0x23e</code> spans several tables. A PACK_AB form accepts <code>0x31</code>; an inspected TF32/PACK_B form rejects the same code, and accepts <code>0x11</code> after the reuse slice is cleared. This is an encoding diagnostic, with deliberately different arithmetic, rather than an optimization example.</p>
+<p><strong>Pass rule:</strong> retain the matched form and its encoding obligations. A same-form register edit must preserve the remaining state. A form-changing edit needs an admitted translation; otherwise reject it. A mnemonic-wide switch or a range check cannot supply a general joint codec. That codec remains incomplete in the current implementation.</p>
+<h2 id="3-separate-readiness-from-completion">3. Separate readiness from completion</h2>
+<p>The machine has several kinds of outstanding work. The current scheduling code separates their obligations:</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Obligation</th><th>Why ordinary SSA is insufficient</th><th>Implementation landmarks</th></tr></thead><tbody><tr><td>Fixed-pipeline readiness</td><td>A producer’s result may not be ready for the next instruction even without a scoreboard post.</td><td><code>lib/pepesilvia/schedule_machine.cpp</code>, <code>schedule_policy.cpp</code></td></tr><tr><td>Physical RAW / WAR / WAW</td><td>Reusing a register can destroy a pending read or result; different destinations alone do not imply independence.</td><td><code>lib/pepesilvia/schedule.cpp</code>, <code>schedule_machine.cpp</code></td></tr><tr><td>Variable-latency completion</td><td>Wait masks must cover pending accesses; a slot cannot be reused while live.</td><td><code>lib/pepesilvia/schedule.cpp</code></td></tr><tr><td>Matrix lifetimes</td><td>HGMMA may retain register or shared-memory operands after their apparent last SSA use.</td><td><code>lib/pepesilvia/schedule_mma.cpp</code></td></tr><tr><td>Cross-warp TMA / publication</td><td>Completion, expected byte counts, stage generations, and ownership must agree across producer and consumers.</td><td>Attention program protocol and scheduling passes in <code>passes/</code></td></tr></tbody></table>
+<p>The generic remapping path repairs controls and branches after supported layout edits. The generated-scalar policy chooses new issue codes in admitted windows. Attention reconstruction additionally constructs matrix and transfer protocols. Keeping one of these models consistent does not establish the other obligations.</p>
+<p>In the attention experiments, completion-only scheduling passed static register and scoreboard checks but failed numerical execution. Adding low-field delay budgets also failed. These counterexamples show why “the model accepted it” cannot be the final correctness argument.</p>
+<h2 id="4-bound-the-schedulers-claims">4. Bound the scheduler’s claims</h2>
+<p>The experimental <code>native-sm90</code> scalar policy admits exact, unguarded, no-reuse forms of FADD.FTZ, FMUL.FTZ, FFMA.FTZ, max-form FMNMX.FTZ, and F2FP.F16.F32.PACK_AB, with further operand restrictions. It plans nominal issue coordinates from physical dependencies and pipe classes. Its admitted windows stay within one basic block and bounded completion fences.</p>
+<p>The model distinguishes FMAI and FXU result distances, anti/output dependencies, and resource initiation. The implemented 4/5/6 nominal result distances are policy inputs informed by the machine descriptions and native witnesses. A broader native scan found a consecutive FMNMX.FTZ pair using W4EG, refuting an earlier universal minimum inferred from fewer kernels. Native observations can falsify an overly broad rule without proving a replacement safe in another context.</p>
+<p>No delay credit crosses an unsupported word or block boundary. An ordinary full wait does not complete every matrix, TMA, or cross-thread protocol. The measured full attention schedule has execution evidence; that evidence belongs to its exact program and tested workloads.</p>
+<h2 id="5-what-a-good-pass-must-leave-behind">5. What a good pass must leave behind</h2>
+<p>Before changing a schedule, retain the original word, architecture, exact form, physical effects, and reason the edit is admitted. After mutation, rebuild affected scheduling projections and check:</p>
+<ol>
+<li><strong>Encoding:</strong> the final word has an admitted joint code and preserves encoder-owned operand bits, PM, and other untouched state.</li>
+<li><strong>Dependencies:</strong> physical register holds, result readiness, scoreboard reuse, CFG joins, and asynchronous stage ownership remain accounted for.</li>
+<li><strong>Reconstruction:</strong> displaced branch targets and affected cubin metadata refer to the final instruction layout.</li>
+<li><strong>Execution:</strong> numerical tests and relevant sanitizers accept the resulting program before any timing result is admitted.</li>
+</ol>
+<p>Cases requiring refusal include undefined USCHED combinations, changing a form while keeping its old reuse code, deleting a required wait without a supported repair, reusing a live scoreboard slot, and overwriting an asynchronous operand. Unsupported repairs should refuse publication rather than silently default fields.</p>
+<p>Continue with <a href="/projects/sass2mlir/examples/writing-a-pass">the first-pass tutorial</a>, <a href="/projects/sass2mlir/examples/regalloc">allocation and lifetimes</a>, or <a href="/projects/sass2mlir/examples/recompile-flashattention">FlashAttention reconstruction</a>. Repository evidence and implementation notes live in <code>docs/probes/redplait-scheduling.md</code>, <code>docs/probes/schedule-policy-audit.md</code>, and <code>docs/flash-attention/psir-boundary-scheduling.md</code>.</p>
+<p>The <a href="/projects/sass2mlir/contracts">compiler contracts</a> connect these scheduling
+obligations to value preservation, allocation, memory coverage, and publication.</p> </article> <nav class="pager" aria-label="Previous and next chapter" data-astro-cid-o3lm7nac> <a href="/projects/sass2mlir/examples/writing-a-pass" data-astro-cid-o3lm7nac>← First pass: FMA contraction</a> <a href="/projects/sass2mlir/examples/regalloc" data-astro-cid-o3lm7nac>Allocation &amp; physical lifetimes →</a> </nav> <footer class="post-footer" data-astro-cid-o3lm7nac><p class="muted" data-astro-cid-o3lm7nac>Updated <time datetime="2026-10-11" data-astro-cid-o3lm7nac>2026-10-11</time> · AGPL-3.0-or-later</p></footer> </div> </div>  </main> </body></html> 

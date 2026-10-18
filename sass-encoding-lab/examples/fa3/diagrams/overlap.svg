@@ -1,0 +1,72 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1120 940" role="img" aria-labelledby="title desc">
+  <title id="title">Delay PV, keep its accumulator dependency</title>
+  <desc id="desc">The prologue carries pending probabilities and V. Each loop runs current QK, completes previous PV, then rescales that result. A final PV drains the pending tile.</desc>
+  <defs><marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#9cd9c0"/></marker></defs>
+  <rect width="1120" height="940" rx="14" fill="#0d161d"/>
+  <g font-family="system-ui, sans-serif">
+    <text x="28" y="42" fill="#d9e5e9" font-size="26">Delay PV, keep its accumulator dependency</text>
+    <text x="28" y="76" fill="#98adba" font-size="18">Three separate phases: initialize the carry, repeat the overlap, then drain the pending tile.</text>
+    <text x="28" y="112" fill="#efc278" font-size="21" text-anchor="start">Prologue</text>
+    <g transform="translate(28 136)" text-anchor="middle">
+      <rect width="328" height="172" rx="12" fill="#152129" stroke="#9cd9c0"/>
+    <text x="164.0" y="42" fill="#9cd9c0" font-size="23" text-anchor="middle">QK₀</text>
+    <text x="164.0" y="82" fill="#d9e5e9" font-size="21" text-anchor="middle">first tile scores</text>
+    </g>
+    <g transform="translate(396 136)" text-anchor="middle">
+      <rect width="328" height="172" rx="12" fill="#152129" stroke="#9cd9c0"/>
+    <text x="164.0" y="42" fill="#9cd9c0" font-size="23" text-anchor="middle">online₀</text>
+    <text x="164.0" y="82" fill="#d9e5e9" font-size="21" text-anchor="middle">m₀, l₀, P₀</text>
+    <text x="164.0" y="115" fill="#d9e5e9" font-size="21" text-anchor="middle">B₀ = zero output seed</text>
+    </g>
+    <g transform="translate(764 136)" text-anchor="middle">
+      <rect width="328" height="172" rx="12" fill="#152129" stroke="#9cd9c0"/>
+    <text x="164.0" y="42" fill="#9cd9c0" font-size="23" text-anchor="middle">Carry</text>
+    <text x="164.0" y="82" fill="#d9e5e9" font-size="21" text-anchor="middle">m₀, l₀, B₀, P₀, V₀</text>
+    <text x="164.0" y="115" fill="#d9e5e9" font-size="21" text-anchor="middle">PV₀ remains pending</text>
+    </g>
+    <path d="M364,222 H388" fill="none" stroke="#9cd9c0" stroke-width="2" marker-end="url(#arrow)"/>
+    <path d="M732,222 H756" fill="none" stroke="#9cd9c0" stroke-width="2" marker-end="url(#arrow)"/>
+    <text x="28" y="374" fill="#efc278" font-size="21" text-anchor="start">Loop t ≥ 1 · repeat with the updated carry</text>
+    <g transform="translate(28 398)" text-anchor="middle">
+      <rect width="328" height="172" rx="12" fill="#152129" stroke="#9cd9c0"/>
+    <text x="164.0" y="42" fill="#9cd9c0" font-size="23" text-anchor="middle">QKₜ</text>
+    <text x="164.0" y="82" fill="#d9e5e9" font-size="21" text-anchor="middle">current tile scores</text>
+    </g>
+    <g transform="translate(396 398)" text-anchor="middle">
+      <rect width="328" height="172" rx="12" fill="#152129" stroke="#9cd9c0"/>
+    <text x="164.0" y="42" fill="#9cd9c0" font-size="23" text-anchor="middle">PVₜ₋₁</text>
+    <text x="164.0" y="82" fill="#d9e5e9" font-size="21" text-anchor="middle">Aₜ₋₁ = Bₜ₋₁ +</text>
+    <text x="164.0" y="115" fill="#d9e5e9" font-size="21" text-anchor="middle">Pₜ₋₁ × Vₜ₋₁</text>
+    </g>
+    <g transform="translate(764 398)" text-anchor="middle">
+      <rect width="328" height="172" rx="12" fill="#152129" stroke="#9cd9c0"/>
+    <text x="164.0" y="42" fill="#9cd9c0" font-size="23" text-anchor="middle">onlineₜ</text>
+    <text x="164.0" y="82" fill="#d9e5e9" font-size="21" text-anchor="middle">rescale completed Aₜ₋₁</text>
+    <text x="164.0" y="115" fill="#d9e5e9" font-size="21" text-anchor="middle">carry Bₜ, Pₜ, Vₜ</text>
+    </g>
+    <path d="M364,484 H388" fill="none" stroke="#9cd9c0" stroke-width="2" marker-end="url(#arrow)"/>
+    <path d="M732,484 H756" fill="none" stroke="#9cd9c0" stroke-width="2" marker-end="url(#arrow)"/>
+    <text x="28" y="636" fill="#efc278" font-size="21" text-anchor="start">Drain · also runs when the recurrent loop has no iterations</text>
+    <g transform="translate(28 660)" text-anchor="middle">
+      <rect width="328" height="172" rx="12" fill="#152129" stroke="#9cd9c0"/>
+    <text x="164.0" y="42" fill="#9cd9c0" font-size="23" text-anchor="middle">Last carry</text>
+    <text x="164.0" y="82" fill="#d9e5e9" font-size="21" text-anchor="middle">B_last, P_last, V_last</text>
+    </g>
+    <g transform="translate(396 660)" text-anchor="middle">
+      <rect width="328" height="172" rx="12" fill="#152129" stroke="#9cd9c0"/>
+    <text x="164.0" y="42" fill="#9cd9c0" font-size="23" text-anchor="middle">PV_last</text>
+    <text x="164.0" y="82" fill="#d9e5e9" font-size="21" text-anchor="middle">complete A_last</text>
+    </g>
+    <g transform="translate(764 660)" text-anchor="middle">
+      <rect width="328" height="172" rx="12" fill="#152129" stroke="#9cd9c0"/>
+    <text x="164.0" y="42" fill="#9cd9c0" font-size="23" text-anchor="middle">Epilogue</text>
+    <text x="164.0" y="82" fill="#d9e5e9" font-size="21" text-anchor="middle">O = fp16(A × r)</text>
+    <text x="164.0" y="115" fill="#d9e5e9" font-size="21" text-anchor="middle">r: guarded reciprocal</text>
+    </g>
+    <path d="M364,746 H388" fill="none" stroke="#9cd9c0" stroke-width="2" marker-end="url(#arrow)"/>
+    <path d="M732,746 H756" fill="none" stroke="#9cd9c0" stroke-width="2" marker-end="url(#arrow)"/>
+    <path d="M928,316 V340 H560 V390" fill="none" stroke="#9cd9c0" stroke-width="2" stroke-dasharray="6 5" marker-end="url(#arrow)"/>
+    <text x="560" y="884" fill="#98adba" font-size="21" text-anchor="middle">Current QK may precede pending previous PV.</text>
+    <text x="560" y="918" fill="#98adba" font-size="20" text-anchor="middle">The current online update still needs the completed previous accumulator.</text>
+  </g>
+</svg>

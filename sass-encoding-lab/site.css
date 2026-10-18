@@ -1,0 +1,90 @@
+.workspace-views { min-width: 0; }
+.local-badge { color: var(--mint); font: 11px var(--mono); }
+.page-heading { display: grid; grid-template-columns: 124px minmax(0, 1fr) auto 124px; gap: 24px; min-height: 164px; }
+.page-heading > div { min-width: 0; }
+.lab-gnome { display: block; width: 124px; height: 164px; object-fit: contain; pointer-events: none; }
+.page-heading .heading-actions { align-self: center; }
+.page-footer a:hover { color: var(--mint); }
+.lab-disclaimer { padding: 16px 20px; margin-bottom: 28px; border: 1px solid #53462e; border-radius: var(--radius); background: #211e18; color: #c9bea7; font-size: 13px; line-height: 1.8; }
+.lab-disclaimer strong, .lab-disclaimer a { color: var(--amber); }
+.lab-disclaimer a { text-decoration: underline; }
+@media (max-width: 1200px) {
+  .page-heading { grid-template-columns: 100px minmax(0, 1fr) auto; gap: 20px; }
+  .lab-gnome { width: 100px; height: 140px; }
+  .lab-gnome-red { display: none; }
+}
+@media (max-width: 650px) {
+  .local-badge { font-size: 9px; }
+  .page-heading { grid-template-columns: minmax(0, 1fr) 76px; gap: 12px; }
+  .page-heading > div:first-of-type { grid-column: 1; grid-row: 1; }
+  .lab-gnome-green { grid-column: 2; grid-row: 1; width: 76px; height: 112px; }
+  .page-heading .heading-actions { grid-column: 1 / -1; margin-top: 0; }
+}
+.attention-demo { margin-bottom: 36px; }
+.attention-intro, .attention-boundary { padding: 28px; }
+.attention-intro h2 { font-size: clamp(22px, 3vw, 32px); margin: 16px 0; }
+.attention-intro > p, .attention-boundary p { color: var(--muted); line-height: 1.8; max-width: 950px; }
+.attention-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 16px 24px; margin: 22px 0; font-size: 12px; color: var(--mint); }
+#attention-status { font: 11px/1.8 var(--mono); }
+.attention-quest-heading { margin: 36px 0 24px; }
+.attention-quest-heading h3 { margin: 14px 0; font-size: 26px; }
+.attention-quest-heading p { color: var(--muted); font-size: 13px; line-height: 1.8; max-width: 800px; }
+.attention-chapters { display: flex; flex-wrap: wrap; gap: 8px; }
+.attention-chapters button { padding: 12px 14px; border: 1px solid var(--line); border-radius: var(--radius); color: var(--muted); font-size: 12px; }
+.attention-chapters button[aria-pressed="true"] { border-color: var(--amber); color: var(--amber); background: rgba(238,190,100,.07); }
+.attention-chapters span { margin-right: 6px; font: 10px var(--mono); }
+.attention-story-navigation { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 20px; }
+.attention-story-navigation button { color: var(--mint); font-size: 12px; padding: 10px 0; }
+.attention-story-navigation button:disabled { opacity: .35; }
+#attention-story-progress { font: 10px var(--mono); color: var(--muted); text-align: center; }
+.attention-stages { list-style: none; padding: 0; margin: 20px 0 36px; }
+.attention-stages li { border-top: 1px solid var(--line); padding-top: 28px; display: grid; grid-template-columns: minmax(0,1.2fr) minmax(0,1fr); gap: 32px; align-items: center; }
+.attention-stages li + li { margin-top: 28px; }
+.attention-stages li[hidden], .attention-story-controls[hidden] { display: none; }
+.attention-stages figure { margin: 0; min-width: 0; }
+.attention-stages img { display: block; width: 100%; height: auto; border: 1px solid var(--line); border-radius: var(--radius); }
+.attention-stages span { color: var(--amber); font: 11px var(--mono); }
+.attention-stages h3 { font-size: 24px; margin: 12px 0; }
+.attention-stages h4 { font-size: 13px; margin: 22px 0 8px; color: var(--mint); }
+.attention-stages p { color: var(--muted); font-size: 13px; line-height: 1.8; }
+.attention-stages .attention-quest-prose { font-size: 16px; line-height: 1.8; color: var(--text); }
+.attention-contract { border-left: 2px solid var(--amber); padding-left: 14px; margin-top: 18px; }
+.attention-contract strong { color: var(--amber); display: block; font: 10px var(--mono); text-transform: uppercase; margin-bottom: 4px; }
+.attention-boundary h3 { margin-bottom: 16px; }
+.attention-boundary p + p { margin-top: 16px; }
+.attention-timings { margin-bottom: 24px; }
+.attention-timing-scroll { overflow-x: auto; margin: 20px 0; }
+.attention-timing-scroll table { width: 100%; border-collapse: collapse; }
+.attention-timing-scroll caption { text-align: left; color: var(--muted); font-size: 12px; padding-bottom: 14px; }
+.attention-timing-scroll tbody th { text-align: left; }
+.attention-demo[hidden] { display: none; }
+@media (max-width: 650px) {
+  .attention-intro, .attention-boundary { padding: 20px; }
+  .attention-stages li { grid-template-columns: 1fr; gap: 24px; }
+  .attention-chapters button { flex: 1 1 30%; padding: 10px 8px; }
+  .attention-quest-heading h3 { font-size: 22px; }
+  .attention-actions .button { white-space: normal; text-align: left; }
+}
+
+.workspace-record { margin-bottom: 22px; }
+.workspace-record > .input-error { padding: 0 22px; }
+@media (max-width: 650px) { .workspace-record > .input-error { padding: 0 14px; } }
+.attention-pipeline-overview { margin-top: 24px; }
+.attention-technical { grid-column: 1 / -1; min-width: 0; border-top: 1px solid var(--line); padding-top: 28px; }
+.attention-stages .attention-technical > h4 { font-size: 20px; line-height: 1.5; margin: 0 0 18px; }
+.attention-technical > p + p { margin-top: 16px; }
+.attention-code-pair { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
+.attention-code-panel { min-width: 0; margin: 22px 0; }
+.attention-code-panel h5 { margin: 0 0 10px; color: var(--mint); font-size: 12px; font-weight: 550; }
+.attention-code-panel pre { margin: 0; padding: 18px; overflow: auto; border: 1px solid var(--line); border-radius: var(--radius); background: #0d161d; color: #d2e1e6; font: 12px/1.8 var(--mono); }
+.attention-code-panel code { font: inherit; }
+.attention-diagram { margin: 24px 0; }
+.attention-diagram-scroll { overflow-x: auto; border: 1px solid var(--line); border-radius: var(--radius); }
+.attention-stages .attention-diagram img, .attention-pipeline-overview .attention-diagram img { display: block; width: 100%; min-width: 760px; max-width: none; height: auto; border: 0; }
+.attention-diagram figcaption, .attention-stages .attention-evidence, .attention-reading-note { margin-top: 12px; color: var(--muted); font-size: 11px; line-height: 1.8; }
+.attention-technical strong { color: var(--text); }
+.attention-publication-flow { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; list-style: none; padding: 0; margin: 24px 0; }
+.attention-stages .attention-publication-flow li { display: flex; flex-direction: column; align-items: flex-start; gap: 10px; padding: 18px; margin: 0; border: 1px solid var(--line); border-radius: var(--radius); }
+.attention-publication-flow li strong { color: var(--mint); font-size: 13px; }
+.attention-publication-flow li span { color: var(--muted); font: 13px/1.8 var(--sans); }
+@media (max-width: 800px) { .attention-code-pair, .attention-publication-flow { grid-template-columns: minmax(0, 1fr); } }

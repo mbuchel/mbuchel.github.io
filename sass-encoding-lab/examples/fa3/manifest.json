@@ -1,0 +1,32 @@
+{
+  "cohort": "October 14 measured program",
+  "date": "2026-10-14",
+  "mode": "noncausal",
+  "launchContract": "fa3-style-output.cubin.launch.json",
+  "source": {
+    "file": "fa2-input.cubin",
+    "sha256": "fbd4bc6cbc5b6f028cd30f23eb90783e97ca5a60d5e20b294dc83d08bb98ec52",
+    "kernel": "_ZN5flash16flash_fwd_kernelI23Flash_fwd_kernel_traitsILi64ELi128ELi128ELi4ELb0ELb0EN7cutlass6half_tE19Flash_kernel_traitsILi64ELi128ELi128ELi4ES3_EELb0ELb0ELb0ELb0ELb1ELb1ELb0ELb0EEEvNS_16Flash_fwd_paramsE",
+    "bytes": 3137488
+  },
+  "target": {
+    "file": "fa3-style-output.cubin",
+    "sha256": "89050c25cdfbfecd0395ad88131eee670e095978583b94bbe777254b634e6a01",
+    "kernel": "_ZN7cutlass13device_kernelIN5flash20enable_sm90_or_laterINS1_16FlashAttnFwdSm90INS1_25CollectiveMainloopFwdSm90ILi2EN4cute5tupleIJNS5_1CILi1EEES8_S8_EEENS6_IJNS7_ILi192EEESA_NS7_ILi64EEEEEELi64ENS_6half_tEfNS_4arch4Sm90ELb0ELb0ELb0ELb0ELb0ELb0ELb0ELb0ELb1ELb0ELb0ELb0EEENS1_21CollectiveEpilogueFwdINS6_IJSA_SB_SA_EEES9_SD_SF_Li384ELb0ELb0ELb0ELb0EEENS1_29StaticPersistentTileSchedulerILb0EEEEEEEEEvNT_6ParamsE",
+    "bytes": 384880
+  },
+  "passName": "flash-attention-resynth",
+  "nativeProgram": {
+    "file": "native-program.mlir",
+    "bytes": 1357378,
+    "sha256": "6a739ea0fab509b6823a3346ab4315bf40754acc3980997ad8e5fcd1c7f2c39d"
+  },
+  "generation": "generation.json",
+  "timings": {
+    "file": "timings.csv",
+    "bytes": 29008,
+    "sha256": "b390f34ffb1b6145248ee505be6f61a9dd820b27c92ce28f8adfe240065df5e5",
+    "cells": 108,
+    "timeUnit": "milliseconds"
+  }
+}

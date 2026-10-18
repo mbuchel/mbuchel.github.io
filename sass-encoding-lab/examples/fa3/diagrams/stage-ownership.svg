@@ -1,0 +1,60 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1120 730" role="img" aria-labelledby="title desc">
+  <title id="title">K/V readiness and ownership are separate obligations</title>
+  <desc id="desc">A producer waits for empty ownership, arms an exact-byte TMA transaction, and consumers wait for ready. All matrix readers must retire before the three consumer releases permit overwrite. Stages run across the top row, then right to left along the bottom row.</desc>
+  <defs><marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#9cd9c0"/></marker></defs>
+  <rect width="1120" height="730" rx="14" fill="#0d161d"/>
+  <g font-family="system-ui, sans-serif">
+    <text x="28" y="42" fill="#d9e5e9" font-size="26">K/V readiness and ownership are separate obligations</text>
+    <text x="28" y="76" fill="#98adba" font-size="18">Follow the arrows across the top, then back along the bottom. Repeat for the next generation.</text>
+    <g transform="translate(28 110)" text-anchor="middle">
+      <rect width="328" height="190" rx="12" fill="#152129" stroke="#9cd9c0"/>
+    <text x="164.0" y="42" fill="#9cd9c0" font-size="23" text-anchor="middle">1 · Wait empty</text>
+    <text x="164.0" y="82" fill="#d9e5e9" font-size="21" text-anchor="middle">producer waits out</text>
+    <text x="164.0" y="115" fill="#d9e5e9" font-size="21" text-anchor="middle">(generation − 1) &amp; 1</text>
+    <text x="164.0" y="148" fill="#d9e5e9" font-size="21" text-anchor="middle">on the selected slot</text>
+    </g>
+    <g transform="translate(396 110)" text-anchor="middle">
+      <rect width="328" height="190" rx="12" fill="#152129" stroke="#9cd9c0"/>
+    <text x="164.0" y="42" fill="#9cd9c0" font-size="23" text-anchor="middle">2 · Expect bytes</text>
+    <text x="164.0" y="82" fill="#d9e5e9" font-size="21" text-anchor="middle">ready barrier</text>
+    <text x="164.0" y="115" fill="#d9e5e9" font-size="21" text-anchor="middle">expects 0x6000 bytes</text>
+    <text x="164.0" y="148" fill="#d9e5e9" font-size="21" text-anchor="middle">for this K or V tile</text>
+    </g>
+    <g transform="translate(764 110)" text-anchor="middle">
+      <rect width="328" height="190" rx="12" fill="#152129" stroke="#9cd9c0"/>
+    <text x="164.0" y="42" fill="#9cd9c0" font-size="23" text-anchor="middle">3 · Fill slot</text>
+    <text x="164.0" y="82" fill="#d9e5e9" font-size="21" text-anchor="middle">UTMALDG.4D</text>
+    <text x="164.0" y="115" fill="#d9e5e9" font-size="21" text-anchor="middle">TMA transfers</text>
+    <text x="164.0" y="148" fill="#d9e5e9" font-size="21" text-anchor="middle">24,576 bytes</text>
+    </g>
+    <g transform="translate(764 382)" text-anchor="middle">
+      <rect width="328" height="190" rx="12" fill="#152129" stroke="#9cd9c0"/>
+    <text x="164.0" y="42" fill="#9cd9c0" font-size="23" text-anchor="middle">4 · Ready epoch</text>
+    <text x="164.0" y="82" fill="#d9e5e9" font-size="21" text-anchor="middle">math waits out</text>
+    <text x="164.0" y="115" fill="#d9e5e9" font-size="21" text-anchor="middle">generation &amp; 1</text>
+    <text x="164.0" y="148" fill="#d9e5e9" font-size="21" text-anchor="middle">or relayed readiness</text>
+    </g>
+    <g transform="translate(396 382)" text-anchor="middle">
+      <rect width="328" height="190" rx="12" fill="#152129" stroke="#9cd9c0"/>
+    <text x="164.0" y="42" fill="#9cd9c0" font-size="23" text-anchor="middle">5 · Retire matrix</text>
+    <text x="164.0" y="82" fill="#d9e5e9" font-size="21" text-anchor="middle">HGMMA reads stage</text>
+    <text x="164.0" y="115" fill="#d9e5e9" font-size="21" text-anchor="middle">warpgroup wait proves</text>
+    <text x="164.0" y="148" fill="#d9e5e9" font-size="21" text-anchor="middle">those reads finished</text>
+    </g>
+    <g transform="translate(28 382)" text-anchor="middle">
+      <rect width="328" height="190" rx="12" fill="#152129" stroke="#9cd9c0"/>
+    <text x="164.0" y="42" fill="#9cd9c0" font-size="23" text-anchor="middle">6 · Release</text>
+    <text x="164.0" y="82" fill="#d9e5e9" font-size="21" text-anchor="middle">one leader per</text>
+    <text x="164.0" y="115" fill="#d9e5e9" font-size="21" text-anchor="middle">math group arrives</text>
+    <text x="164.0" y="148" fill="#d9e5e9" font-size="21" text-anchor="middle">3 readers → reusable</text>
+    </g>
+    <path d="M364,205 H388" fill="none" stroke="#9cd9c0" stroke-width="2" marker-end="url(#arrow)"/>
+    <path d="M732,205 H756" fill="none" stroke="#9cd9c0" stroke-width="2" marker-end="url(#arrow)"/>
+    <path d="M928,308 V374" fill="none" stroke="#9cd9c0" stroke-width="2" marker-end="url(#arrow)"/>
+    <path d="M756,477 H732" fill="none" stroke="#9cd9c0" stroke-width="2" marker-end="url(#arrow)"/>
+    <path d="M388,477 H364" fill="none" stroke="#9cd9c0" stroke-width="2" marker-end="url(#arrow)"/>
+    <text x="560" y="628" fill="#98adba" font-size="21" text-anchor="middle">Reuse the same slot in its next generation.</text>
+    <text x="560" y="662" fill="#98adba" font-size="20" text-anchor="middle">Carry stage epochs and the ring cursor across work tickets.</text>
+    <text x="560" y="704" fill="#efc278" font-size="18" text-anchor="middle">Q has a separate named-barrier handoff; this ready/empty cycle describes K and V.</text>
+  </g>
+</svg>
