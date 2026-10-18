@@ -1,4 +1,5 @@
 import {parseIR,rawAttributes,ssaTokens} from './ir.mjs';
+import {assemblyCommentHTML} from './assembly.mjs';
 import {mountCFG} from './cfg-ui.mjs';
 import {layoutCFG} from './cfg.mjs';
 import {diffLines,compareCFG} from './compare.mjs';
@@ -122,6 +123,7 @@ export function mountIRComparison({onEncoding,showCompare,showEncoding,onChange=
     renderRows();
   }
   function lineHTML(side,line){
+    const assembly=assemblyCommentHTML(panes[side].lines[line]);if(assembly!==null)return assembly;
     const p=panes[side],tokens=[...ssaTokens(p.lines[line]),...p.cfg.tokens(line).map(t=>({...t,kind:'block'}))].sort((a,b)=>a.start-b.start);let out='',at=0;
     for(const t of tokens){if(t.start<at)continue;out+=esc(p.lines[line].slice(at,t.start));out+=t.kind==='block'?`<button class="ir-block-token" data-compare-block="${t.block}">${esc(p.lines[line].slice(t.start,t.end))}</button>`:`<button class="ssa-token${p.ssa===t.value?' selected-ssa':''}" data-compare-ssa="${esc(t.value)}">${esc(t.value)}</button>`;at=t.end;}return out+esc(p.lines[line].slice(at));
   }

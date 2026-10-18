@@ -7,6 +7,7 @@ import {hex} from './core.mjs';
 import {catalog,sourceTable,fetchJSON} from './opcode-data.mjs';
 import {loadRuntime} from './runtime/loader.mjs';
 import {liftFunction} from './runtime/lift.mjs';
+import {instructionHTML,assemblyCommentHTML} from './assembly.mjs';
 const $=id=>document.getElementById(id);
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const PAGE=128;
@@ -55,7 +56,7 @@ export function mountBinaryExplorer({onEncoding,onView=()=>{},onWorkspaceChange=
     $('instruction-rows').innerHTML=cubin.canSlice?Array.from({length:end-start},(_,i)=>{
       const x=instructionAt(cubin,fn,start+i);
       const reference=opcodeReferences.get(Number(x.value&0xfffn)),lifted=liftedInstructions.get(fn.id)?.[x.index];
-      return `<tr><td class="mono">0x${x.offset.toString(16).padStart(4,'0')}</td><td><code>${x.hex.match(/.{8}/g).join(' ')}</code><small class="instruction-source-name" title="${lifted?'Source-derived JavaScript decoding':'Mnemonic from the opcode table’s seed row; not a full disassembly'}">${lifted?esc(lifted.assembly):reference?esc(reference.mnemonic)+' · '+esc(reference.opcode_val)+' · seed label':'No opcode reference loaded'}</small></td><td>${lifted?`<button class="encoding-pick" data-jump-ir="${x.offset}" aria-label="Explore IR for offset ${x.offset}">IR</button>`:''}<button class="encoding-pick pick-a" data-instruction="${x.index}" data-side="a" aria-label="Use instruction at offset ${x.offset} as baseline A">A</button><button class="encoding-pick pick-b" data-instruction="${x.index}" data-side="b" aria-label="Use instruction at offset ${x.offset} as variant B">B</button></td></tr>`;
+      return `<tr><td class="mono">0x${x.offset.toString(16).padStart(4,'0')}</td><td><code>${x.hex.match(/.{8}/g).join(' ')}</code><small class="instruction-source-name" title="${lifted?'Source-derived JavaScript decoding':'Mnemonic from the opcode table’s seed row; not a full disassembly'}">${lifted?(lifted.decoded?instructionHTML(lifted.assembly):esc(lifted.assembly)):reference?esc(reference.mnemonic)+' · '+esc(reference.opcode_val)+' · seed label':'No opcode reference loaded'}</small></td><td>${lifted?`<button class="encoding-pick" data-jump-ir="${x.offset}" aria-label="Explore IR for offset ${x.offset}">IR</button>`:''}<button class="encoding-pick pick-a" data-instruction="${x.index}" data-side="a" aria-label="Use instruction at offset ${x.offset} as baseline A">A</button><button class="encoding-pick pick-b" data-instruction="${x.index}" data-side="b" aria-label="Use instruction at offset ${x.offset} as variant B">B</button></td></tr>`;
     }).join(''):'<tr><td colspan="3" class="muted">This architecture cannot be sliced into 128-bit instructions.</td></tr>';
     $('instruction-page').textContent=cubin.canSlice?`${fn.count?start+1:0}–${end} of ${fn.count.toLocaleString()} instructions`:'Instruction slicing unavailable';
     $('instruction-prev').disabled=!cubin.canSlice||instructionPage===0;
@@ -152,6 +153,7 @@ export function mountBinaryExplorer({onEncoding,onView=()=>{},onWorkspaceChange=
     $('ir-link-status').textContent=ir.generatedId?`${ir.source} · ${ir.stats.decoded}/${ir.stats.instructions} decoded · raw bytes and SSA structure checked${ir.digest?' · cubin SHA-256: '+ir.digest:''}.`:match?`Function name matches the selected cubin symbol · ${ir.source} · association by name, not a verified binary/IR match.`:`${ir.source} · ${ir.name} · source text only; no verified binary/IR association.`;
   }
   function renderLine(text,line) {
+    const assembly=assemblyCommentHTML(text);if(assembly!==null)return assembly;
     let result='',position=0;
     const tokens=[...ssaTokens(text),...cfg.tokens(line).map(t=>({...t,kind:'block'}))].sort((a,b)=>a.start-b.start);
     for(const token of tokens) {

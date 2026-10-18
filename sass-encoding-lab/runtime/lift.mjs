@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Source-derived read-only SSA projection and Sass dialect text serializer.
-import {bits,fpBits,printOperand} from './ast.mjs';
+import {bits,fpBits,printInstruction} from './ast.mjs';
 import {decodeInstruction} from './decoder.mjs';
 import {GUARD,OLD,recoverCFG,branchEdges,computeDefuse,computeLiveness,projectSSA,key} from './analysis.mjs';
 import {instructionAt} from '../cubin.mjs';
@@ -43,7 +43,7 @@ export function serializeMLIR(fn,sm,insts,blocks,ssa,vocabulary,tail=new Uint8Ar
       const a=insts[i],src=a.ssaUses.filter((_,j)=>a.uses[j][0]!==GUARD&&a.uses[j][0]!==OLD),old=a.ssaUses.filter((_,j)=>a.uses[j][0]===OLD),guardIdx=a.uses.findIndex(r=>r[0]===GUARD),guard=guardIdx>=0?a.ssaUses[guardIdx]:null;
       if(Number(bits(a.encoding,12,15))!==7)src.push(...old);
       attrs=attributes(a,vocabulary);
-      const assembly=(a.has_guard?'@'+(a.guard_neg?'!':'')+(a.guard.uniform?'UP':'P')+(a.guard.all?'T':a.guard.num)+' ':'')+[a.mnemonic,...a.modifiers].join('.')+(a.operands.length?' '+a.operands.map(printOperand).join(', '):'');
+      const assembly=printInstruction(a);
       lines.push('    // +0x'+a.pc.toString(16).padStart(4,'0')+' '+(a.decoded?assembly.replace(/[\r\n]/g,' '):'HIDDEN (raw carrier)'));
       lines.push('    '+(a.ssaDefs.length?a.ssaDefs.map(id=>'%v'+id).join(', ')+' = ':'')+'sass.inst '+(a.decoded?a.mnemonic:'HIDDEN')+(guard!==null?' '+(a.guard.uniform?'uguard':'guard')+'(%v'+guard+')':'')+(src.length?' '+src.map(id=>'%v'+id).join(', '):'')+' : ('+src.map(ty).join(', ')+') -> ('+a.ssaDefs.map(ty).join(', ')+') {'+Object.entries(attrs).map(([k,v])=>k+' = '+v).join(', ')+'}');
     }
@@ -72,5 +72,5 @@ export function liftFunction(cubin,fn,model,vocabulary){
   // Independently compare the low/high byte reconstruction to every input byte.
   for(let i=0;i<insts.length;i++)for(let b=0;b<16;b++)if(Number(insts[i].encoding>>BigInt(b*8)&255n)!==cubin.bytes[fn.fileOffset+i*16+b])throw new Error('Raw instruction byte validation failed.');
   const tail=cubin.bytes.slice(fn.fileOffset+fn.count*16,fn.fileOffset+fn.size),text=serializeMLIR(fn,model.sm,insts,blocks,ssa,vocabulary,tail),decoded=insts.filter(a=>a.decoded).length;
-  return {text,stats:{instructions:insts.length,decoded,raw:insts.length-decoded,blocks:blocks.length,values:ssa.values.length,unresolved:insts.filter(a=>branchEdges(a).unresolved).length,tail:tail.length},instructions:insts.map(a=>({pc:a.pc,decoded:a.decoded,assembly:a.decoded?[a.mnemonic,...a.modifiers].join('.')+(a.operands.length?' '+a.operands.map(printOperand).join(', '):''):'HIDDEN · raw carrier'}))};
+  return {text,stats:{instructions:insts.length,decoded,raw:insts.length-decoded,blocks:blocks.length,values:ssa.values.length,unresolved:insts.filter(a=>branchEdges(a).unresolved).length,tail:tail.length},instructions:insts.map(a=>({pc:a.pc,decoded:a.decoded,assembly:a.decoded?printInstruction(a):'HIDDEN · raw carrier'}))};
 }

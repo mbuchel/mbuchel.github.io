@@ -2,10 +2,12 @@
 // https://llvm.org/doxygen/ELFObjectFile_8cpp_source.html (getNVPTXCPUName)
 import {hex} from './core.mjs';
 const LIMIT=64*1024*1024;
-export function cudaArchitecture(flags,abi) {
+export function cudaArchitecture(flags,abi,toolkitNote='') {
   if(![7,8].includes(abi)) return {sm:null,name:`Unknown CUDA ABI ${abi}`};
   const sm=abi===7?flags&0xff:(flags>>>8)&0xff;
-  const suffix=(sm===90&&(flags&0x800))||(sm>=100&&(flags&8))?'a':'';
+  const accelerator=abi===7?sm===90&&(flags&0x800):sm>=90&&(flags&8);
+  const noted=[...toolkitNote.matchAll(/sm_(\d+)a\b/g)].some(match=>Number(match[1])===sm);
+  const suffix=accelerator||noted?'a':'';
   return {sm,name:sm?`sm_${sm}${suffix}`:'Unknown SM'};
 }
 export function parseCubin(buffer) {
@@ -84,7 +86,8 @@ export function parseCubin(buffer) {
   }
   if(!functions.length)throw new Error('No executable .text functions found in this cubin.');
   if(functions.length>20000)throw new Error('Cubin exceeds the 20,000-function limit.');
-  const flags=view.getUint32(48,true),abi=bytes[8],arch=cudaArchitecture(flags,abi);
+  const toolkitNote=sections.filter(s=>s.name==='.note.nv.tkinfo'&&s.type!==0&&s.type!==8).map(s=>decoder.decode(bytes.subarray(s.offset,s.offset+s.size))).join('\n');
+  const flags=view.getUint32(48,true),abi=bytes[8],arch=cudaArchitecture(flags,abi,toolkitNote);
   const warnings=[];
   if(!arch.sm)warnings.push('Architecture could not be identified. Instruction slicing is disabled.');
   else if(arch.sm<70)warnings.push('Pre-Volta instruction/control bundles are not 128-bit instructions. Instruction slicing is disabled.');

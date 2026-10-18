@@ -21,8 +21,24 @@ tables retain the upstream AGPL-3.0-or-later license and contributor attribution
 see LICENSE.txt. JavaScript source is delivered directly as ES modules.
 
 Website integration adds project navigation and decorative generated gnomes.
-Decoder algorithms, analyses, workers, and source archives retain their imported
-bytes. Data loaders handle raw gzip and HTTP-decoded responses with checksum
-verification. The built-in FA2 → FA3-style example loads the exact bundled
-source99 before/after cubins through the existing browser lift and comparison.
+The decoder AST includes targeted native-parity fixes for signed NaNs, memory
+operands and instruction text formatting. Cubin target selection distinguishes
+ABI-specific accelerator flags and reads matching architecture names from
+`.note.nv.tkinfo`, preserving the hardware SM rather than its virtual target. Imported analyses, workers and source
+archives retain their original bytes. Data loaders handle raw gzip and
+HTTP-decoded responses with checksum verification. The built-in FA2 → FA3-style
+example loads the exact bundled noncausal FA2 input and rebuilt output cubins
+through the existing browser lift and comparison.
 It does not execute the native transformation or GPU code; see examples/fa3/.
+
+Run `node scripts/check-sass-decoder.mjs` from the website repository for the
+frozen native decoder/parser regression cases; no native build is required.
+
+The 2026-10-18 CPU parity audit covers all 39,142 retained cubins (14.94 GB),
+including all functions and executable section ranges: 688,907,876 instruction
+occurrences matched the current native decoder's admission and exact printed
+assembly, with duplicate bytes/PCs reused. Of these, 9,536 occurrences in 12
+SM75 files were rejected by both decoders and remain undecoded. Another 7,396
+files contain no executable code. There were no parser errors, unsupported
+architectures or partial instruction words. This establishes native decoder
+parity on this corpus; it does not verify GPU execution or native MLIR semantics.

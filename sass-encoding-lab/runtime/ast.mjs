@@ -13,11 +13,11 @@ const buf=new DataView(new ArrayBuffer(8));
 export function fpBits(value){buf.setFloat64(0,value,true);return buf.getBigUint64(0,true);}
 export function floatValue(kind,raw){
   if(kind===7){buf.setBigUint64(0,raw<<32n,true);return buf.getFloat64(0,true);}
-  if(kind===8){const h=Number(raw)&65535,s=h>>15?-1:1,x=(h>>10)&31,m=h&1023;return s*(x===31?m?NaN:Infinity:x===0?m*2**-24:(m+1024)*2**(x-25));}
+  if(kind===8){const h=Number(raw)&65535,s=h>>15?-1:1,x=(h>>10)&31,m=h&1023;if(x===31&&m){buf.setBigUint64(0,0x7ff8000000000000n|(BigInt(h>>15)<<63n),true);return buf.getFloat64(0,true);}return s*(x===31?Infinity:x===0?m*2**-24:(m+1024)*2**(x-25));}
   buf.setUint32(0,Number(kind===9?raw<<16n:raw),true);return buf.getFloat32(0,true);
 }
 export function printFP(d,f64=false){
-  const neg=d<0||Object.is(d,-0),a=Math.abs(d),sign=neg?'-':'';
+  const neg=!!(fpBits(d)>>63n),a=Math.abs(d),sign=neg?'-':'';
   if(!Number.isFinite(a))return sign+(neg?'':'+')+(Number.isNaN(a)?'QNAN':'INF');
   if(a===0)return neg?'-0.0':'0';
   if(Number.isInteger(a)&&a<(f64?1e9:2147483648))return sign+String(a);
@@ -42,6 +42,10 @@ export function printOperand(o){
   let s=o.type==='reg'?printReg(o):o.type==='pred'?(o.uniform?'UP':'P')+(o.num===255?'R':o.all?'T':o.num):o.type==='imm'?o.kind===2?printFP(o.neg?-o.fp:o.fp,o.f64):(o.neg?'-':'')+(o.kind===0?'0x'+o.data.toString(16):o.data.toString()):o.type==='mem'?printMem(o):o.type==='barset'?'{'+o.ids.join(',')+'}':o.type==='label'?'`('+o.text+')':o.text||'';
   if(o.abs)s='|'+s+'|';if(o.reuse)s+='.reuse';if(o.selector)s+='.'+o.selector;if(o.bnot)s='~'+s;if(o.neg&&o.type!=='imm')s=(o.type==='pred'?'!':'-')+s;return s;
 }
+export function printInstruction(inst){
+  let line=(inst.has_guard?'@'+(inst.guard_neg?'!':'')+(inst.guard.uniform?'UP':'P')+(inst.guard.all?'T':inst.guard.num)+' ':'')+[inst.mnemonic,...inst.modifiers].join('.');
+  inst.operands.forEach((op,i)=>{line+=(i===0||op.space_sep?' ':', ')+printOperand(op);});return line;
+}
 export function parseOperand(input){
   let s=input.trim(),flags={};
   s=s.replace(/\.reuse(?=\.|$)/,()=>{flags.reuse=true;return '';});
@@ -64,24 +68,31 @@ export function parseOperand(input){
   return {...(v||{type:'opaque',kind:0,text:s,num:0}),...flags};
 }
 function parseMem(s){
-  const m=mem(),groups=[...s.matchAll(/\[([^\]]*)\]/g)],prefix=s.slice(0,s.indexOf('['));let index=0;
+  const m=mem(),groups=[],prefix=s.slice(0,s.indexOf('['));let index=0,end=prefix.length;
+  while(s[end]==='['){
+    const close=s.indexOf(']',end);if(close<0)return null;
+    groups.push(s.slice(end+1,close));end=close+1;
+    if(s[end]===' '){if(groups.length===1&&['desc','idesc'].includes(prefix))return null;m.group_spaced=true;end++;}
+  }
   if(!groups.length)return null;
-  if(prefix==='c'){m.space=3;try{m.bank=Number(BigInt(groups[index++][1]));}catch{return null;}}
-  else if(prefix==='cx'){m.space=4;const r=/^UR(Z|\d+)(.*)$/.exec(groups[index++][1]);if(!r)return null;m.cx_bank=r[1]==='Z'?0:Number(r[1]);m.cx_bank_z=r[1]==='Z';m.cx_bank_mods=r[2];}
-  else if(prefix==='desc'||prefix==='idesc'){m.space=prefix==='desc'?5:8;m.desc_ur=groups[index++][1];}
+  if(end<s.length){if(s[end]!=='.')return null;m.selector=s.slice(end+1);}
+  if(prefix==='c'){m.space=3;try{m.bank=Number(BigInt(groups[index++]));}catch{return null;}}
+  else if(prefix==='cx'){m.space=4;const r=/^UR(Z|\d+)(.*)$/.exec(groups[index++]);if(!r||r[1]!=='Z'&&r[1].length>9)return null;m.cx_bank=r[1]==='Z'?0:Number(r[1]);m.cx_bank_z=r[1]==='Z';m.cx_bank_mods=r[2];}
+  else if(prefix==='desc'||prefix==='idesc'){m.space=prefix==='desc'?5:8;m.desc_ur=groups[index++];}
   else if(prefix)m.space=({gdesc:6,tmem:7,a:9})[prefix]??-1;
   if(m.space<0)return null;
   if(index>=groups.length)return m;
   if(index+1!==groups.length)return null;
-  const g=groups[index][1],a=m.addr;m.addr_group=true;m.group_spaced=/\]\s+\[/.test(s);
+  const g=groups[index],a=m.addr;m.addr_group=true;
   let rest=g;
   const base=/^(R(?:Z|\d+))((?:\.[a-z0-9]+)*)/i.exec(rest);
-  if(base){if(base[1]!=='RZ'&&BigInt(base[1].slice(1))>0xffffffffn)return null;a.base=parseOperand(base[1]);a.has_base=true;a.base_mods=base[2];rest=rest.slice(base[0].length);}
+  if(base){if(base[1]!=='RZ'&&base[1].slice(1).length>9)return null;a.base=parseOperand(base[1]);a.has_base=true;a.base_mods=base[2];rest=rest.slice(base[0].length);}
   if(rest.startsWith('+'))rest=rest.slice(1);
   const ur=/^UR(Z|\d+)((?:\.[a-z0-9]+)*)/i.exec(rest);
-  if(ur){if(ur[1]!=='Z'&&BigInt(ur[1])>0xffffffffn)return null;a.offreg=ur[1]==='Z'?0:Number(ur[1]);a.offreg_z=ur[1]==='Z';a.offreg_mods=ur[2];rest=rest.slice(ur[0].length);}
+  if(ur){if(ur[1]!=='Z'&&ur[1].length>9)return null;a.offreg=ur[1]==='Z'?0:Number(ur[1]);a.offreg_z=ur[1]==='Z';a.offreg_mods=ur[2];rest=rest.slice(ur[0].length);}
   if(rest.startsWith('+'))rest=rest.slice(1);
   if(rest){if(!/^-?0x[0-9a-f]+$/i.test(rest))return null;a.hex_off=rest;a.hex_off_present=true;}
-  if(m.space===5&&a.has_base&&/^UR(?:\d+|Z)/.test(m.desc_ur)&&/^\.(?:8|16|32|64|128)$/.test(a.base_mods)){m.desc_kind=1;m.desc_reg_size=['.8','.16','.32','.64','.128'].indexOf(a.base_mods);const d=/^(UR(?:\d+|Z))(.*)$/.exec(m.desc_ur);m.desc_ur=d[1];m.desc_ur_mods=d[2];}
+  const d=/^UR(Z|\d{1,9})(\..*)?$/.exec(m.desc_ur);
+  if([5,8].includes(m.space)&&a.has_base&&a.offreg<0&&d&&/^\.(?:8|16|32|64|128)$/.test(a.base_mods)){if(m.group_spaced)return null;m.desc_kind=m.space===5?1:2;m.desc_reg_size=['.8','.16','.32','.64','.128'].indexOf(a.base_mods);m.desc_ur='UR'+(d[1]==='Z'?'Z':Number(d[1]));m.desc_ur_mods=d[2]||'';}
   return m;
 }
