@@ -42,3 +42,17 @@ SM75 files were rejected by both decoders and remain undecoded. Another 7,396
 files contain no executable code. There were no parser errors, unsupported
 architectures or partial instruction words. This establishes native decoder
 parity on this corpus; it does not verify GPU execution or native MLIR semantics.
+
+Opcode tables exposes this snapshot as an audit with per-opcode occurrence
+counts. All 9,536 native-undecoded occurrences use SM75 selector `0x23e`:
+`HIDDEN_SM75_INST` is a hidden source placeholder without a generated native
+decoder entry. Native means the C++ decoder, not GPU execution. Matching its
+rejection is agreement, not a successful decode. Unobserved opcodes and
+architectures outside this corpus are explicitly marked as such.
+
+Workbench modifiers and guards are green, operand payloads blue, and bits that
+serve both roles have a split green/blue marker. Roles follow the selected
+source opcode/variant and native mnemonic-group dependencies; scheduling and
+other shared controls remain separate. The legend explains these roles and
+distinguishes them from amber A/B difference backgrounds.
+Run `node scripts/check-sass-bit-roles.mjs` for source-role and audit checks.

@@ -1,3 +1,4 @@
+import {mountOpcodeAudit} from './audit-ui.mjs';
 import {mountAttentionDemo} from './attention-demo.mjs';
 import {parseCubin,instructionAt} from './cubin.mjs';
 import {parseIR,rawAttributes,ssaTokens,parseTSV} from './ir.mjs';
@@ -18,6 +19,7 @@ export function mountBinaryExplorer({onEncoding,onView=()=>{},onWorkspaceChange=
   let cubin=null,cubinName='',digest='',fn=null,instructionPage=0,irs=[],ir=null,irPage=0,selectedSSA='',focusLine=-1;
   let tables=[],opcodePage=0,rawByLine=new Map(),irLines=[],loadingCubin=0,loadingIR=0,loadingOpcodes=0;
   let sourceCatalog=null,sourceMetas=[],remoteTables=true,opcodeReferences=new Map();
+  const audit=mountOpcodeAudit({onReady:()=>renderOpcodes(),onInspect({architecture,opcode}){sourceArchitectureOptions();$('opcode-architecture').value=architecture;$('opcode-search').value='0x'+opcode.toString(16);sourceArchitecture();}});
   let liftWorker=null,liftTicket=0,lifting=false,liftedInstructions=new Map();
   const cfg=mountCFG({onSelect({block,jump}){
     $('ir-block').value=String(block.line);
@@ -223,7 +225,7 @@ export function mountBinaryExplorer({onEncoding,onView=()=>{},onWorkspaceChange=
       if(files.length>5000||files.reduce((n,f)=>n+f.size,0)>48*1024*1024)throw new Error('Select at most 5,000 TSV files and 48 MB in total.');
       const result=[];
       for(const file of files){if(file.size>16*1024*1024)throw new Error(`${file.name} exceeds 16 MB.`);result.push(parseTSV(await file.text(),file.webkitRelativePath||file.name));}
-      if(ticket!==loadingOpcodes)return;tables=result;opcodePage=0;remoteTables=false;
+      if(ticket!==loadingOpcodes)return;tables=result;opcodePage=0;remoteTables=false;audit.setArchitecture('Local upload');
       $('opcode-architecture').innerHTML='<option>Local upload</option>';
       $('opcode-table').innerHTML=tables.map((t,i)=>`<option value="${i}">${esc(t.name)}</option>`).join('');
       $('opcode-status').textContent=`${tables.length} local tables · ${tables.reduce((n,t)=>n+t.rows.length,0).toLocaleString()} source rows · session only`;
@@ -235,23 +237,25 @@ export function mountBinaryExplorer({onEncoding,onView=()=>{},onWorkspaceChange=
     const table=tables[Number($('opcode-table').value)];if(!table)return;
     const q=$('opcode-search').value.trim().toLowerCase(),rows=table.rows.map((cells,index)=>({cells,index})).filter(x=>x.cells.some(c=>c.toLowerCase().includes(q)));
     opcodePage=Math.min(opcodePage,Math.max(0,Math.ceil(rows.length/PAGE)-1));
-    const start=opcodePage*PAGE,selected=rows.slice(start,start+PAGE);
-    $('opcode-grid').innerHTML='<thead><tr><th>ROW</th>'+Array.from({length:table.columns},(_,i)=>`<th>${esc(table.headers?.[i]??'COLUMN '+(i+1))}</th>`).join('')+'</tr></thead><tbody>'+selected.map(r=>`<tr><td>${r.index+1}</td>${Array.from({length:table.columns},(_,i)=>`<td>${esc(r.cells[i]??'')}</td>`).join('')}</tr>`).join('')+'</tbody>';
+    const start=opcodePage*PAGE,selected=rows.slice(start,start+PAGE),auditColumn=remoteTables&&sourceMetas[Number($('opcode-table').value)]?.kind==='opcodes.tsv',opcodeColumn=table.headers?.indexOf('opcode_val')??-1;
+    $('opcode-grid').innerHTML='<thead><tr><th>ROW</th>'+Array.from({length:table.columns},(_,i)=>`<th>${esc(table.headers?.[i]??'COLUMN '+(i+1))}</th>`).join('')+(auditColumn?'<th>RETAINED CORPUS AUDIT</th>':'')+'</tr></thead><tbody>'+selected.map(r=>`<tr><td>${r.index+1}</td>${Array.from({length:table.columns},(_,i)=>`<td>${esc(r.cells[i]??'')}</td>`).join('')}${auditColumn?`<td>${audit.result(Number(BigInt(r.cells[opcodeColumn])))}</td>`:''}</tr>`).join('')+'</tbody>';
     $('opcode-page').textContent=`${rows.length?start+1:0}–${Math.min(start+PAGE,rows.length)} of ${rows.length.toLocaleString()} rows`;
     $('opcode-prev').disabled=opcodePage===0;$('opcode-next').disabled=start+PAGE>=rows.length;
   }
   async function loadSourceTable() {
     const index=Number($('opcode-table').value),meta=sourceMetas[index],current=++loadingOpcodes;
-    if(!meta)return;$('opcode-status').textContent='Loading '+meta.path+'…';
+    if(!meta)return;$('opcode-status').textContent='Loading '+meta.path+'…';$('opcode-grid').replaceChildren();
     try {
-      if(!tables[index])tables[index]=parseTSV(await sourceTable(meta),meta.path);
+      const table=tables[index]||parseTSV(await sourceTable(meta),meta.path);
       if(current!==loadingOpcodes)return;
+      tables[index]=table;
       opcodePage=0;$('opcode-workspace').hidden=false;$('opcode-error').textContent='';
       $('opcode-status').textContent=`${sourceCatalog.architectures.length} architectures · ${sourceCatalog.tableCount} bundled TSVs · ${sourceCatalog.opcodeCount.toLocaleString()} opcodes · ${meta.path}`;
       renderOpcodes();
     }catch(error){if(current===loadingOpcodes)$('opcode-error').textContent=error.message;}
   }
   function sourceArchitecture() {
+    audit.setArchitecture($('opcode-architecture').value);
     sourceMetas=sourceCatalog.files.filter(f=>f.arch===$('opcode-architecture').value&&f.kind.endsWith('.tsv'));
     tables=[];remoteTables=true;
     $('opcode-table').innerHTML=sourceMetas.map((f,i)=>`<option value="${i}">${esc(f.kind)} · ${f.rows.toLocaleString()} rows</option>`).join('');
@@ -261,13 +265,15 @@ export function mountBinaryExplorer({onEncoding,onView=()=>{},onWorkspaceChange=
   $('opcode-architecture').addEventListener('change',sourceArchitecture);
   $('opcode-table').addEventListener('change',()=>{opcodePage=0;if(remoteTables)loadSourceTable();else renderOpcodes();});$('opcode-search').addEventListener('input',()=>{opcodePage=0;renderOpcodes();});
   $('opcode-prev').addEventListener('click',()=>{opcodePage--;renderOpcodes();});$('opcode-next').addEventListener('click',()=>{opcodePage++;renderOpcodes();});
+  function sourceArchitectureOptions(){
+    $('opcode-architecture').innerHTML=sourceCatalog.architectures.map(a=>`<option>${esc(a.name)}</option>`).join('')+'<option value="global">Shared tables</option>';
+  }
   catalog().then(data=>{
-    sourceCatalog=data;
-    $('opcode-architecture').innerHTML=data.architectures.map(a=>`<option>${esc(a.name)}</option>`).join('')+'<option value="global">Shared tables</option>';
+    sourceCatalog=data;sourceArchitectureOptions();
     $('opcode-architecture').value=data.architectures.some(a=>a.name==='SM90')?'SM90':data.architectures[0].name;
     // Data browsing stays lazy until the tab is first opened.
     $('opcode-status').textContent=`${data.architectures.length} architectures · ${data.tableCount} bundled TSVs · ${data.opcodeCount.toLocaleString()} opcodes`;
-    document.querySelector('[data-view="opcodes"]').addEventListener('click',()=>{if(!sourceMetas.length)sourceArchitecture();});
+    document.querySelector('[data-view="opcodes"]').addEventListener('click',()=>{audit.load();if(!sourceMetas.length)sourceArchitecture();});
   }).catch(error=>{$('opcode-error').textContent='Bundled source unavailable: '+error.message;});
   if(globalThis.location?.hash==='#attention-view')view('attention');
   return {

@@ -2,6 +2,7 @@ import {parseEncoding,hex,formatEncoding,changedBits,changedRanges,rangeLabel,ex
 import {mountBinaryExplorer} from './binary-ui.mjs';
 import {mountReference} from './reference-ui.mjs';
 import {mountDecodedPair} from './decoded-pair.mjs';
+import {bitRoles,roleClass,roleLabel} from './field-roles.mjs';
 
 const $ = id => document.getElementById(id);
 const STORAGE_KEY='sass-encoding-lab.v1';
@@ -97,7 +98,7 @@ function renderBits(focusBit=null) {
   $('diff-count').textContent=`${changed.length} / 128 bits differ`;
   $('diff-count').classList.toggle('identical',changed.length===0);
   $('xor-mask').textContent=hex(xor).match(/.{8}/g).join(' ');
-  let html='';
+  let html='';const roles=bitRoles(sourceFields);
   for(let row=3;row>=0;row--) {
     html+='<div class="bit-row"><div class="bit-row-label"><span>'+String(row*32+31).padStart(3,'0')+'</span><div class="ab">A<br><span>B</span></div></div><div class="bit-cells">';
     for(let bit=row*32+31;bit>=row*32;bit--) {
@@ -105,8 +106,8 @@ function renderBits(focusBit=null) {
       const isSelected=selected.bits?selected.bits.includes(bit):bit>=selected.lo&&bit<=selected.hi;
       const hs=draft.hypotheses.filter(h=>h.bits?h.bits.includes(bit):bit>=h.lo&&bit<=h.hi);
       const source=sourceFields.filter(f=>f.bits.includes(bit));
-      const title=`Bit ${bit} · A: ${av}, B: ${bv}${hs.length?' · '+hs.map(h=>h.label).join(', '):''}${source.length?' · Source: '+source.map(f=>'op'+f.operand+' '+f.name).join(', '):''}`;
-      html+=`<button type="button" class="bit${av!==bv?' changed':''}${isSelected?' selected':''}${hs.length||source.length?' annotated':''}${bit%4===0?' nibble-edge':''}" data-bit="${bit}" tabindex="${bit===(focusBit??selected.lo)?0:-1}" aria-label="${escape(title)}" aria-pressed="${isSelected}" title="${escape(title)}"><span class="bit-index">${bit}</span><span>${av}</span><span>${bv}</span></button>`;
+      const title=`Bit ${bit} · A: ${av}, B: ${bv} · Role: ${roleLabel(roles[bit])}${hs.length?' · '+hs.map(h=>h.label).join(', '):''}${source.length?' · Source: '+source.map(f=>'op'+f.operand+' '+f.name).join(', '):''}`;
+      html+=`<button type="button" class="bit ${roles[bit]?roleClass(roles[bit]):''}${av!==bv?' changed':''}${isSelected?' selected':''}${hs.length||source.length?' annotated':''}${bit%4===0?' nibble-edge':''}" data-bit="${bit}" tabindex="${bit===(focusBit??selected.lo)?0:-1}" aria-label="${escape(title)}" aria-pressed="${isSelected}" title="${escape(title)}"><span class="bit-index">${bit}</span><span>${av}</span><span>${bv}</span></button>`;
     }
     html+='</div></div>';
   }
